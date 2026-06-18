@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
@@ -24,10 +23,10 @@ public final class OverlayRenderer {
     private OverlayRenderer() {
     }
 
-    public static void render(DrawContext context, RenderTickCounter tickCounter) {
+    public static void renderScreen(DrawContext context, int mouseX, int mouseY, float delta) {
         MinecraftClient client = MinecraftClient.getInstance();
 
-        if (client.player == null || client.options.hudHidden || !KeyBindings.isOverlayHeld()) {
+        if (client.player == null) {
             return;
         }
 
@@ -37,8 +36,8 @@ public final class OverlayRenderer {
 
         Map<Integer, Integer> bindCounts = countKeybinds(client.options.allKeys);
 
-        int layoutWidth = 340;
-        int layoutHeight = 150;
+        int layoutWidth = 772;
+        int layoutHeight = 210;
         int startX = (screenWidth - layoutWidth) / 2;
         int startY = (screenHeight - layoutHeight) / 2;
 
@@ -54,7 +53,7 @@ public final class OverlayRenderer {
                 TEXT_COLOR
         );
 
-        for (KeyVisual key : KeyboardLayout.ansiLettersOnly()) {
+        for (KeyVisual key : KeyboardLayout.ansiFull()) {
             drawKey(context, textRenderer, bindCounts, key, startX, startY);
         }
 
