@@ -19,12 +19,6 @@ public class KeyMapHUDClient implements ClientModInitializer {
             if (pressed && !wasPressed) {
 
                 MinecraftClient mc = MinecraftClient.getInstance();
-
-                if (mc.currentScreen instanceof KeyMapScreen) {
-                    mc.setScreen(null);
-                } else {
-                    mc.setScreen(new KeyMapScreen());
-                }
             }
 
             wasPressed = pressed;
