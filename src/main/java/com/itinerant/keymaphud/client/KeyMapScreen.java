@@ -28,6 +28,7 @@ public class KeyMapScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_RIGHT_ALT) {
+            KeyMapHUDClient.waitingForRelease = true;
             close();
             return true;
         }

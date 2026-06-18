@@ -173,13 +173,24 @@ public final class OverlayRenderer {
         int x = mouseX + 12;
         int y = mouseY + 12;
 
+        context.getMatrices().push();
+        context.getMatrices().translate(0, 0, 500);
+
         context.fill(x - 1, y - 1, x + tooltipWidth + 1, y + tooltipHeight + 1, 0xFF000000);
         context.fill(x, y, x + tooltipWidth, y + tooltipHeight, 0xFF202020);
         context.drawBorder(x, y, tooltipWidth, tooltipHeight, 0xFFFFFFFF);
 
         for (int i = 0; i < lines.size(); i++) {
             int color = i == 0 ? 0xFFFFFF : 0xDDDDDD;
-            context.drawTextWithShadow(textRenderer, lines.get(i), x + padding, y + padding + i * lineHeight, color);
+            context.drawTextWithShadow(
+                    textRenderer,
+                    lines.get(i),
+                    x + padding,
+                    y + padding + i * lineHeight,
+                    color
+            );
         }
+
+        context.getMatrices().pop();
     }
 }
