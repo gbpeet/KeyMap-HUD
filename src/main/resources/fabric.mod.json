@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "keymaphud",
+  "version": "${version}",
+  "name": "KeyMap HUD",
+  "description": "An in-game visual keyboard showing keybinds and conflicts.",
+  "authors": [
+    "Itinerant"
+  ],
+  "contact": {
+    "sources": "https://github.com/ItinerantMods/KeyMapHUD"
+  },
+  "license": "MIT",
+  "icon": "assets/keymaphud/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "com.itinerant.keymaphud.KeyMapHUD"
+    ],
+    "client": [
+      "com.itinerant.keymaphud.client.KeyMapHUDClient"
+    ]
+  },
+
+  "mixins": [
+    "keymaphud.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
