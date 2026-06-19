@@ -274,8 +274,23 @@ public final class OverlayRenderer {
         int tooltipWidth = width + padding * 2;
         int tooltipHeight = lines.size() * lineHeight + padding * 2;
 
+        MinecraftClient client = MinecraftClient.getInstance();
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
         int x = mouseX + 12;
         int y = mouseY + 12;
+
+        if (x + tooltipWidth > screenWidth - 4) {
+            x = mouseX - tooltipWidth - 12;
+        }
+
+        if (y + tooltipHeight > screenHeight - 4) {
+            y = mouseY - tooltipHeight - 12;
+        }
+
+        x = Math.max(4, x);
+        y = Math.max(4, y);
 
         context.getMatrices().push();
         context.getMatrices().translate(0, 0, 500);
