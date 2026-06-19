@@ -40,7 +40,7 @@ public final class OverlayRenderer {
 
         int layoutLeft = 0;
         int layoutRight = 900;
-        int layoutTop = -36;
+        int layoutTop = -62;
         int layoutBottom = 210;
 
         int layoutWidth = layoutRight - layoutLeft;
@@ -82,8 +82,47 @@ public final class OverlayRenderer {
                 textRenderer,
                 title,
                 layoutLeft + (layoutWidth - textRenderer.getWidth(title)) / 2,
-                -24,
+                -52,
                 TEXT_COLOR
+        );
+
+        // Search box (placeholder)
+        int searchX = layoutLeft + 12;
+        int searchY = -24;
+        int searchWidth = 260;
+        int searchHeight = 16;
+
+        context.fill(
+                searchX,
+                searchY,
+                searchX + searchWidth,
+                searchY + searchHeight,
+                0xFF202020
+        );
+
+        context.drawBorder(
+                searchX,
+                searchY,
+                searchWidth,
+                searchHeight,
+                BORDER_COLOR
+        );
+
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal("Search..."),
+                searchX + 6,
+                searchY + 4,
+                0xFFAAAAAA
+        );
+
+        // Statistics bar
+        drawStatsBar(
+                context,
+                textRenderer,
+                bindingsByKey,
+                layoutLeft,
+                layoutWidth
         );
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
@@ -311,5 +350,50 @@ public final class OverlayRenderer {
         }
 
         context.getMatrices().pop();
+    }
+
+    private static void drawStatsBar(
+            DrawContext context,
+            TextRenderer textRenderer,
+            Map<Integer, List<KeyBinding>> bindingsByKey,
+            int layoutLeft,
+            int layoutWidth
+    ) {
+        int totalKeys = KeyboardLayout.ansiFull().size();
+        int boundKeys = 0;
+        int conflictKeys = 0;
+        int totalBindings = 0;
+
+        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+            List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
+
+            if (!bindings.isEmpty()) {
+                boundKeys++;
+            }
+
+            if (bindings.size() > 1) {
+                conflictKeys++;
+            }
+
+            totalBindings += bindings.size();
+        }
+
+        int freeKeys = totalKeys - boundKeys;
+
+        String stats = "Keys: " + totalKeys
+                + "   Free: " + freeKeys
+                + "   Bound: " + boundKeys
+                + "   Conflicts: " + conflictKeys
+                + "   Actions: " + totalBindings;
+
+        int x = layoutLeft + (layoutWidth - textRenderer.getWidth(stats)) / 2;
+
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal(stats),
+                x,
+                -40,
+                0xFFCCCCCC
+        );
     }
 }
