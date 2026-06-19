@@ -86,8 +86,6 @@ public final class OverlayRenderer {
                 TEXT_COLOR
         );
 
-        drawStatsBar(context, textRenderer, bindingsByKey, layoutLeft, layoutWidth);
-
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
             drawKey(context, textRenderer, bindingsByKey, key, 0, 0);
 
@@ -313,50 +311,5 @@ public final class OverlayRenderer {
         }
 
         context.getMatrices().pop();
-    }
-
-    private static void drawStatsBar(
-            DrawContext context,
-            TextRenderer textRenderer,
-            Map<Integer, List<KeyBinding>> bindingsByKey,
-            int layoutLeft,
-            int layoutWidth
-    ) {
-        int totalKeys = KeyboardLayout.ansiFull().size();
-        int boundKeys = 0;
-        int conflictKeys = 0;
-        int totalBindings = 0;
-
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
-            List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
-
-            if (!bindings.isEmpty()) {
-                boundKeys++;
-            }
-
-            if (bindings.size() > 1) {
-                conflictKeys++;
-            }
-
-            totalBindings += bindings.size();
-        }
-
-        int freeKeys = totalKeys - boundKeys;
-
-        String stats = "Keys: " + totalKeys
-                + "   Free: " + freeKeys
-                + "   Bound: " + boundKeys
-                + "   Conflicts: " + conflictKeys
-                + "   Actions: " + totalBindings;
-
-        int x = layoutLeft + (layoutWidth - textRenderer.getWidth(stats)) / 2;
-
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(stats),
-                x,
-                -10,
-                0xFFCCCCCC
-        );
     }
 }

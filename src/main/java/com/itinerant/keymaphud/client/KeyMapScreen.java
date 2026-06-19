@@ -5,6 +5,8 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
 public class KeyMapScreen extends Screen {
+    private String searchQuery = "";
+
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
     }
@@ -21,7 +23,16 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Intentionally empty so the world remains visible behind the HUD.
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (!Character.isISOControl(chr)) {
+            searchQuery += chr;
+            return true;
+        }
+
+        return super.charTyped(chr, modifiers);
     }
 
     @Override
@@ -29,6 +40,11 @@ public class KeyMapScreen extends Screen {
         if (KeyBindings.matchesOverlayKey(keyCode, scanCode)) {
             KeyMapHUDClient.waitingForRelease = true;
             close();
+            return true;
+        }
+
+        if (keyCode == 259 && !searchQuery.isEmpty()) { // Backspace
+            searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
             return true;
         }
 
