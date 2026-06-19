@@ -126,7 +126,7 @@ public final class OverlayRenderer {
         );
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
-            drawKey(context, textRenderer, bindingsByKey, key, 0, 0);
+            drawKey(context, textRenderer, bindingsByKey, key, 0, 0, searchQuery);
 
             if (isMouseOverKey(key, 0, 0, localMouseX, localMouseY)) {
                 hoveredKey = key;
@@ -176,23 +176,32 @@ public final class OverlayRenderer {
             Map<Integer, List<KeyBinding>> bindingsByKey,
             KeyVisual key,
             int startX,
-            int startY
+            int startY,
+            String searchQuery
     ) {
         List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
         int count = bindings.size();
 
+        boolean matchesSearch = matchesSearch(key, bindings, searchQuery);
+
         int color = count == 0 ? UNUSED_COLOR : count == 1 ? USED_COLOR : CONFLICT_COLOR;
+        int textColor = TEXT_COLOR;
+
+        if (!matchesSearch) {
+            color = (color & 0x00FFFFFF) | 0x33000000;
+            textColor = 0x66FFFFFF;
+        }
 
         int x = startX + key.x();
         int y = startY + key.y();
 
         context.fill(x, y, x + key.width(), y + key.height(), color);
-        context.drawBorder(x, y, key.width(), key.height(), BORDER_COLOR);
+        context.drawBorder(x, y, key.width(), key.height(), matchesSearch ? BORDER_COLOR : 0x66FFFFFF);
 
         int labelY = count == 0 ? y + 7 : y + 2;
         int labelX = x + (key.width() - textRenderer.getWidth(key.label())) / 2;
 
-        context.drawTextWithShadow(textRenderer, Text.literal(key.label()), labelX, labelY, TEXT_COLOR);
+        context.drawTextWithShadow(textRenderer, Text.literal(key.label()), labelX, labelY, textColor);
 
         if (count > 0) {
             String miniLabel = count > 1 ? count + "x" : makeMiniLabel(bindings.get(0));
@@ -204,9 +213,49 @@ public final class OverlayRenderer {
                     x + key.width() / 2,
                     y + 13,
                     0.65f,
-                    0xFFFFFFFF
+                    textColor
             );
         }
+    }
+
+    private static boolean matchesSearch(KeyVisual key, List<KeyBinding> bindings, String searchQuery) {
+        if (searchQuery == null || searchQuery.isBlank()) {
+            return true;
+        }
+
+        String query = searchQuery.toLowerCase();
+
+        if (query.equals("mouse")) {
+            return key.label().contains("MB");
+        }
+
+        if (query.equals("left mouse")) {
+            return key.label().equals("LMB");
+        }
+
+        if (query.equals("right mouse")) {
+            return key.label().equals("RMB");
+        }
+
+        if (query.equals("middle mouse")) {
+            return key.label().equals("MMB");
+        }
+
+        if (key.label().toLowerCase().contains(query)) {
+            return true;
+        }
+
+        for (KeyBinding binding : bindings) {
+            String category = Text.translatable(binding.getCategory()).getString().toLowerCase();
+            String action = Text.translatable(binding.getTranslationKey()).getString().toLowerCase();
+            String mini = makeMiniLabel(binding).toLowerCase();
+
+            if (category.contains(query) || action.contains(query) || mini.contains(query)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static String makeMiniLabel(KeyBinding binding) {
