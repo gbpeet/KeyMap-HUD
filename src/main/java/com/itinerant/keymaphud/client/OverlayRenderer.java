@@ -150,10 +150,80 @@ public final class OverlayRenderer {
         context.fill(x, y, x + key.width(), y + key.height(), color);
         context.drawBorder(x, y, key.width(), key.height(), BORDER_COLOR);
 
-        int textX = x + (key.width() - textRenderer.getWidth(key.label())) / 2;
-        int textY = y + 7;
+        int labelY = count == 0 ? y + 7 : y + 2;
+        int labelX = x + (key.width() - textRenderer.getWidth(key.label())) / 2;
 
-        context.drawTextWithShadow(textRenderer, Text.literal(key.label()), textX, textY, TEXT_COLOR);
+        context.drawTextWithShadow(textRenderer, Text.literal(key.label()), labelX, labelY, TEXT_COLOR);
+
+        if (count > 0) {
+            String miniLabel = count > 1 ? count + "x" : makeMiniLabel(bindings.get(0));
+
+            drawScaledCenteredText(
+                    context,
+                    textRenderer,
+                    miniLabel,
+                    x + key.width() / 2,
+                    y + 13,
+                    0.65f,
+                    0xFFFFFFFF
+            );
+        }
+    }
+
+    private static String makeMiniLabel(KeyBinding binding) {
+        String name = Text.translatable(binding.getTranslationKey()).getString();
+
+        name = name
+                .replace("Open ", "")
+                .replace("Toggle ", "")
+                .replace("Show ", "")
+                .replace("Use ", "")
+                .replace("KeyMap HUD", "HUD")
+                .trim();
+
+        String[] words = name.split("[\\s_\\-/]+");
+
+        if (words.length == 0 || name.isBlank()) {
+            return "?";
+        }
+
+        if (words.length == 1) {
+            String word = words[0].replaceAll("[^A-Za-z0-9]", "");
+            return word.length() <= 3 ? word.toUpperCase() : word.substring(0, 3).toUpperCase();
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        for (String word : words) {
+            if (!word.isBlank() && Character.isLetterOrDigit(word.charAt(0))) {
+                result.append(Character.toUpperCase(word.charAt(0)));
+            }
+
+            if (result.length() >= 3) {
+                break;
+            }
+        }
+
+        return result.isEmpty() ? "?" : result.toString();
+    }
+
+    private static void drawScaledCenteredText(
+            DrawContext context,
+            TextRenderer textRenderer,
+            String text,
+            int centerX,
+            int y,
+            float scale,
+            int color
+    ) {
+        int textWidth = textRenderer.getWidth(text);
+        float x = centerX - (textWidth * scale) / 2.0f;
+
+        context.getMatrices().push();
+        context.getMatrices().translate(x, y, 0);
+        context.getMatrices().scale(scale, scale, 1.0f);
+        context.drawTextWithShadow(textRenderer, Text.literal(text), 0, 0, color);
+        context.getMatrices().pop();
     }
 
     private static boolean isMouseOverKey(KeyVisual key, int startX, int startY, int mouseX, int mouseY) {
