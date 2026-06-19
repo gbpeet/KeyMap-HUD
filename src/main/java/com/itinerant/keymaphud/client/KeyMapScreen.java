@@ -53,6 +53,6 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        OverlayRenderer.renderScreen(context, mouseX, mouseY, delta);
+        OverlayRenderer.renderScreen(context, mouseX, mouseY, delta, searchQuery);
     }
 }

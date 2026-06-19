@@ -25,7 +25,7 @@ public final class OverlayRenderer {
     private OverlayRenderer() {
     }
 
-    public static void renderScreen(DrawContext context, int mouseX, int mouseY, float delta) {
+    public static void renderScreen(DrawContext context, int mouseX, int mouseY, float delta, String searchQuery) {
         MinecraftClient client = MinecraftClient.getInstance();
 
         if (client.player == null) {
@@ -110,7 +110,7 @@ public final class OverlayRenderer {
 
         context.drawTextWithShadow(
                 textRenderer,
-                Text.literal("Search..."),
+                Text.literal(searchQuery == null || searchQuery.isBlank() ? "Search..." : searchQuery + "_"),
                 searchX + 6,
                 searchY + 4,
                 0xFFAAAAAA
