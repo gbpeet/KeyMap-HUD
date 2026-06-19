@@ -93,14 +93,14 @@ public final class KeyboardLayout {
                 new KeyVisual(GLFW.GLFW_KEY_RIGHT_SUPER, "WIN", 358, 156, 42, 22),
                 new KeyVisual(GLFW.GLFW_KEY_RIGHT_CONTROL, "CTRL", 404, 156, 68, 22),
 
-                // Mouse cluster
-                new KeyVisual(-100, "LMB", -110, 66, 42, 42),
-                new KeyVisual(-99, "RMB", -64, 66, 42, 42),
+                // Mouse cluster - default right side
+                new KeyVisual(-100, "LMB", 800, 66, 42, 42),
+                new KeyVisual(-99, "RMB", 846, 66, 42, 42),
 
-                new KeyVisual(-98, "MMB", -87, 112, 42, 22),
+                new KeyVisual(-98, "MMB", 823, 112, 42, 22),
 
-                new KeyVisual(-97, "MB4", -110, 138, 42, 22),
-                new KeyVisual(-96, "MB5", -64, 138, 42, 22),
+                new KeyVisual(-97, "MB4", 800, 138, 42, 22),
+                new KeyVisual(-96, "MB5", 846, 138, 42, 22),
 
                 // Navigation cluster
                 key(GLFW.GLFW_KEY_INSERT, "INS", 504, 36),

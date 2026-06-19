@@ -38,29 +38,58 @@ public final class OverlayRenderer {
 
         Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
 
-        int layoutWidth = 772;
-        int layoutHeight = 210;
-        int startX = (screenWidth - layoutWidth) / 2;
-        int startY = (screenHeight - layoutHeight) / 2;
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -36;
+        int layoutBottom = 210;
 
-        context.fill(startX - 16, startY - 36, startX + layoutWidth + 16, startY + layoutHeight, 0xAA101010);
-        context.drawBorder(startX - 16, startY - 36, layoutWidth + 32, layoutHeight + 36, BORDER_COLOR);
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        KeyVisual hoveredKey = null;
+
+        context.getMatrices().push();
+        context.getMatrices().translate(originX, originY, 0);
+        context.getMatrices().scale(scale, scale, 1.0f);
+
+        context.fill(layoutLeft - 16, layoutTop, layoutRight + 16, layoutBottom, 0xAA101010);
+        context.drawBorder(layoutLeft - 16, layoutTop, layoutWidth + 32, layoutHeight, BORDER_COLOR);
+
+        // Mouse cluster outline
+        context.drawBorder(790, 56, 108, 126, BORDER_COLOR);
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal("Mouse"),
+                827,
+                44,
+                0xFFCCCCCC
+        );
 
         Text title = Text.literal("KeyMap HUD");
         context.drawTextWithShadow(
                 textRenderer,
                 title,
-                startX + (layoutWidth - textRenderer.getWidth(title)) / 2,
-                startY - 24,
+                layoutLeft + (layoutWidth - textRenderer.getWidth(title)) / 2,
+                -24,
                 TEXT_COLOR
         );
 
-        KeyVisual hoveredKey = null;
-
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
-            drawKey(context, textRenderer, bindingsByKey, key, startX, startY);
+            drawKey(context, textRenderer, bindingsByKey, key, 0, 0);
 
-            if (isMouseOverKey(key, startX, startY, mouseX, mouseY)) {
+            if (isMouseOverKey(key, 0, 0, localMouseX, localMouseY)) {
                 hoveredKey = key;
             }
         }
@@ -68,10 +97,12 @@ public final class OverlayRenderer {
         context.drawTextWithShadow(
                 textRenderer,
                 Text.literal("Green = unused   Amber = bound   Red = conflict"),
-                startX + 12,
-                startY + 188,
+                layoutLeft + 12,
+                188,
                 0xFFCCCCCC
         );
+
+        context.getMatrices().pop();
 
         if (hoveredKey != null) {
             drawTooltip(context, textRenderer, bindingsByKey, hoveredKey, mouseX, mouseY);
@@ -83,8 +114,8 @@ public final class OverlayRenderer {
 
         for (KeyBinding binding : allKeys) {
             InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
-            int keyCode;
 
+            int keyCode;
             switch (key.getCategory()) {
                 case MOUSE -> keyCode = -100 + key.getCode();
                 default -> keyCode = key.getCode();
@@ -159,9 +190,7 @@ public final class OverlayRenderer {
                 lines.add(Text.literal(""));
             }
 
-            if (!lines.isEmpty()) {
-                lines.remove(lines.size() - 1);
-            }
+            lines.remove(lines.size() - 1);
         }
 
         int padding = 6;
