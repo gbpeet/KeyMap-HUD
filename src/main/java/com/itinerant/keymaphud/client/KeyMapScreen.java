@@ -3,7 +3,6 @@ package com.itinerant.keymaphud.client;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
-import org.lwjgl.glfw.GLFW;
 
 public class KeyMapScreen extends Screen {
     public KeyMapScreen() {
@@ -27,7 +26,7 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_RIGHT_ALT) {
+        if (KeyBindings.matchesOverlayKey(keyCode, scanCode)) {
             KeyMapHUDClient.waitingForRelease = true;
             close();
             return true;

@@ -83,7 +83,12 @@ public final class OverlayRenderer {
 
         for (KeyBinding binding : allKeys) {
             InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
-            int keyCode = key.getCode();
+            int keyCode;
+
+            switch (key.getCategory()) {
+                case MOUSE -> keyCode = -100 + key.getCode();
+                default -> keyCode = key.getCode();
+            }
 
             if (keyCode != GLFW.GLFW_KEY_UNKNOWN) {
                 bindingsByKey
