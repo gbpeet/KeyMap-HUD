@@ -116,6 +116,49 @@ public final class OverlayRenderer {
                 0xFFAAAAAA
         );
 
+        String[] filters = {
+                "All",
+                "Bound",
+                "Unused",
+                "Conflict",
+                "Mouse",
+                "Keyboard"
+        };
+
+        int buttonX = searchX + searchWidth + 12;
+        int buttonY = -24;
+
+        for (String filter : filters) {
+
+            int width = textRenderer.getWidth(filter) + 12;
+
+            context.fill(
+                    buttonX,
+                    buttonY,
+                    buttonX + width,
+                    buttonY + 14,
+                    0xFF303030
+            );
+
+            context.drawBorder(
+                    buttonX,
+                    buttonY,
+                    width,
+                    14,
+                    BORDER_COLOR
+            );
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal(filter),
+                    buttonX + 6,
+                    buttonY + 3,
+                    0xFFFFFFFF
+            );
+
+            buttonX += width + 6;
+        }
+
         // Statistics bar
         drawStatsBar(
                 context,
@@ -239,6 +282,22 @@ public final class OverlayRenderer {
 
         if (query.equals("middle mouse")) {
             return key.label().equals("MMB");
+        }
+
+        if (query.equals("unused")) {
+            return bindings.isEmpty();
+        }
+
+        if (query.equals("bound")) {
+            return !bindings.isEmpty();
+        }
+
+        if (query.equals("conflict") || query.equals("conflicts")) {
+            return bindings.size() > 1;
+        }
+
+        if (query.equals("keyboard")) {
+            return key.keyCode() >= 0;
         }
 
         if (key.label().toLowerCase().contains(query)) {
