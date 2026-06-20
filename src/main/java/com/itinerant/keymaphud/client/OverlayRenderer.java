@@ -504,4 +504,72 @@ public final class OverlayRenderer {
                 0xFFCCCCCC
         );
     }
+
+    public static String getQuickFilterQueryAt(int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -62;
+        int layoutBottom = 210;
+
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        String[] filters = {
+                "All",
+                "Bound",
+                "Unused",
+                "Conflict",
+                "Mouse",
+                "Keyboard"
+        };
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        int searchX = layoutLeft + 12;
+        int searchWidth = 260;
+
+        int buttonX = searchX + searchWidth + 12;
+        int buttonY = -24;
+
+        for (String filter : filters) {
+            int width = textRenderer.getWidth(filter) + 12;
+
+            if (localMouseX >= buttonX
+                    && localMouseX <= buttonX + width
+                    && localMouseY >= buttonY
+                    && localMouseY <= buttonY + 14) {
+
+                return switch (filter) {
+                    case "All" -> "";
+                    case "Bound" -> "bound";
+                    case "Unused" -> "unused";
+                    case "Conflict" -> "conflict";
+                    case "Mouse" -> "mouse";
+                    case "Keyboard" -> "keyboard";
+                    default -> "";
+                };
+            }
+
+            buttonX += width + 6;
+        }
+
+        return null;
+    }
 }

@@ -7,15 +7,6 @@ import net.minecraft.text.Text;
 public class KeyMapScreen extends Screen {
     private String searchQuery = "";
 
-    private static final String[] QUICK_FILTERS = {
-            "all",
-            "bound",
-            "unused",
-            "conflict",
-            "mouse",
-            "keyboard"
-    };
-
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
     }
@@ -67,25 +58,11 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        String quickFilter = OverlayRenderer.getQuickFilterQueryAt((int) mouseX, (int) mouseY);
 
-        int x = 290;
-        int y = 38;
-
-        for (String filter : QUICK_FILTERS) {
-
-            int width = textRenderer.getWidth(filter) + 12;
-
-            if (mouseX >= x
-                    && mouseX <= x + width
-                    && mouseY >= y
-                    && mouseY <= y + 14) {
-
-                searchQuery = filter.equals("all") ? "" : filter;
-
-                return true;
-            }
-
-            x += width + 6;
+        if (quickFilter != null) {
+            searchQuery = quickFilter;
+            return true;
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
