@@ -78,13 +78,32 @@ public final class OverlayRenderer {
         );
 
         Text title = Text.literal("KeyMap HUD");
+
+        context.getMatrices().push();
+
+        float titleScale = 2.0f;
+
+        context.getMatrices().translate(
+                layoutLeft + 12,
+                -56,
+                0
+        );
+
+        context.getMatrices().scale(
+                titleScale,
+                titleScale,
+                1.0f
+        );
+
         context.drawTextWithShadow(
                 textRenderer,
                 title,
-                layoutLeft + (layoutWidth - textRenderer.getWidth(title)) / 2,
-                -52,
+                0,
+                0,
                 TEXT_COLOR
         );
+
+        context.getMatrices().pop();
 
         // Search box (placeholder)
         int searchX = layoutLeft + 12;
@@ -175,14 +194,6 @@ public final class OverlayRenderer {
                 hoveredKey = key;
             }
         }
-
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("Green = unused   Amber = bound   Red = conflict"),
-                layoutLeft + 12,
-                188,
-                0xFFCCCCCC
-        );
 
         context.getMatrices().pop();
 
@@ -373,6 +384,25 @@ public final class OverlayRenderer {
         context.getMatrices().pop();
     }
 
+    private static int drawStatPart(
+            DrawContext context,
+            TextRenderer textRenderer,
+            String text,
+            int x,
+            int y,
+            int color
+    ) {
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal(text),
+                x,
+                y,
+                color
+        );
+
+        return x + textRenderer.getWidth(text);
+    }
+
     private static boolean isMouseOverKey(KeyVisual key, int startX, int startY, int mouseX, int mouseY) {
         int x = startX + key.x();
         int y = startY + key.y();
@@ -488,20 +518,43 @@ public final class OverlayRenderer {
 
         int freeKeys = totalKeys - boundKeys;
 
-        String stats = "Keys: " + totalKeys
-                + "   Free: " + freeKeys
-                + "   Bound: " + boundKeys
-                + "   Conflicts: " + conflictKeys
-                + "   Actions: " + totalBindings;
+        int y = -40;
+        int x = layoutLeft + 290;
 
-        int x = layoutLeft + (layoutWidth - textRenderer.getWidth(stats)) / 2;
-
-        context.drawTextWithShadow(
+        x = drawStatPart(
+                context,
                 textRenderer,
-                Text.literal(stats),
+                "Keys: " + totalKeys,
                 x,
-                -40,
+                y,
                 0xFFCCCCCC
+        );
+
+        x = drawStatPart(
+                context,
+                textRenderer,
+                "Free: " + freeKeys,
+                x + 14,
+                y,
+                0xFF55FF99
+        );
+
+        x = drawStatPart(
+                context,
+                textRenderer,
+                "Bound: " + boundKeys,
+                x + 14,
+                y,
+                0xFFFFCC55
+        );
+
+        drawStatPart(
+                context,
+                textRenderer,
+                "Conflicts: " + conflictKeys,
+                x + 14,
+                y,
+                0xFFFF6666
         );
     }
 
