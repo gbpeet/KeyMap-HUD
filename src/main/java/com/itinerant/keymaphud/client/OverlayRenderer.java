@@ -31,7 +31,8 @@ public final class OverlayRenderer {
             int mouseY,
             float delta,
             String searchQuery,
-            boolean filterDrawerOpen
+            boolean filterDrawerOpen,
+            int drawerScroll
     )  {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -273,6 +274,8 @@ public final class OverlayRenderer {
 
             int itemX = drawerX + 14;
             int itemY = drawerY + 32;
+
+            itemY -= drawerScroll;
 
             context.drawTextWithShadow(
                     textRenderer,
@@ -978,5 +981,42 @@ public final class OverlayRenderer {
         }
 
         return null;
+    }
+
+    public static boolean isMouseInsideFilterDrawer(int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -62;
+        int layoutBottom = 210;
+
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        int drawerX = 700;
+        int drawerY = layoutTop + 8;
+        int drawerPanelWidth = 190;
+        int drawerHeight = layoutBottom - layoutTop - 16;
+
+        return localMouseX >= drawerX
+                && localMouseX <= drawerX + drawerPanelWidth
+                && localMouseY >= drawerY
+                && localMouseY <= drawerY + drawerHeight;
     }
 }

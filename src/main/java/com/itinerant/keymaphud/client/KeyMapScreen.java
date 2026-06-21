@@ -7,6 +7,8 @@ import net.minecraft.text.Text;
 public class KeyMapScreen extends Screen {
     private String searchQuery = "";
 
+    private int drawerScroll = 0;
+
     private boolean filterDrawerOpen = false;
 
     public KeyMapScreen() {
@@ -61,8 +63,20 @@ public class KeyMapScreen extends Screen {
                 mouseY,
                 delta,
                 searchQuery,
-                filterDrawerOpen
+                filterDrawerOpen,
+                drawerScroll
         );
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (filterDrawerOpen && OverlayRenderer.isMouseInsideFilterDrawer((int) mouseX, (int) mouseY)) {
+            drawerScroll -= (int) Math.signum(verticalAmount) * 12;
+            drawerScroll = Math.max(0, drawerScroll);
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
