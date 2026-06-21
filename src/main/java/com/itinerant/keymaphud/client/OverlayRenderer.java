@@ -25,7 +25,14 @@ public final class OverlayRenderer {
     private OverlayRenderer() {
     }
 
-    public static void renderScreen(DrawContext context, int mouseX, int mouseY, float delta, String searchQuery) {
+    public static void renderScreen(
+            DrawContext context,
+            int mouseX,
+            int mouseY,
+            float delta,
+            String searchQuery,
+            boolean filterDrawerOpen
+    )  {
         MinecraftClient client = MinecraftClient.getInstance();
 
         if (client.player == null) {
@@ -178,6 +185,41 @@ public final class OverlayRenderer {
             buttonX += width + 6;
         }
 
+        // Filters drawer button
+
+        int drawerButtonX = buttonX + 12;
+        int drawerButtonY = -24;
+
+        String drawerLabel = filterDrawerOpen
+                ? "Filters ▲"
+                : "Filters ▼";
+
+        int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
+
+        context.fill(
+                drawerButtonX,
+                drawerButtonY,
+                drawerButtonX + drawerWidth,
+                drawerButtonY + 14,
+                0xFF303030
+        );
+
+        context.drawBorder(
+                drawerButtonX,
+                drawerButtonY,
+                drawerWidth,
+                14,
+                BORDER_COLOR
+        );
+
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal(drawerLabel),
+                drawerButtonX + 8,
+                drawerButtonY + 3,
+                TEXT_COLOR
+        );
+
         // Statistics bar
         drawStatsBar(
                 context,
@@ -193,6 +235,112 @@ public final class OverlayRenderer {
             if (isMouseOverKey(key, 0, 0, localMouseX, localMouseY)) {
                 hoveredKey = key;
             }
+        }
+
+        if (filterDrawerOpen) {
+            int drawerX = 700;
+            int drawerY = layoutTop + 8;
+
+            int drawerPanelWidth = 190;
+            int drawerHeight = layoutBottom - layoutTop - 16;
+
+            context.getMatrices().push();
+            context.getMatrices().translate(0, 0, 400);
+
+            context.fill(
+                    drawerX,
+                    drawerY,
+                    drawerX + drawerPanelWidth,
+                    drawerY + drawerHeight,
+                    0xFF181818
+            );
+
+            context.drawBorder(
+                    drawerX,
+                    drawerY,
+                    drawerPanelWidth,
+                    drawerHeight,
+                    BORDER_COLOR
+            );
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Filters"),
+                    drawerX + 14,
+                    drawerY + 12,
+                    TEXT_COLOR
+            );
+
+            int itemX = drawerX + 14;
+            int itemY = drawerY + 32;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Quick"),
+                    itemX,
+                    itemY,
+                    0xFFAAAAAA
+            );
+
+            itemY += 14;
+
+            String[] drawerFilters = {
+                    "All",
+                    "Bound",
+                    "Unused",
+                    "Conflict",
+                    "Mouse",
+                    "Keyboard"
+            };
+
+            for (String filter : drawerFilters) {
+                context.drawTextWithShadow(
+                        textRenderer,
+                        Text.literal("• " + filter),
+                        itemX,
+                        itemY,
+                        TEXT_COLOR
+                );
+
+                itemY += 12;
+            }
+
+            itemY += 10;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Categories"),
+                    itemX,
+                    itemY,
+                    0xFFAAAAAA
+            );
+
+            itemY += 14;
+
+            List<String> categories = bindingsByKey.values().stream()
+                    .flatMap(List::stream)
+                    .map(binding -> Text.translatable(binding.getCategory()).getString())
+                    .distinct()
+                    .sorted()
+                    .toList();
+
+            for (String category : categories) {
+                context.drawTextWithShadow(
+                        textRenderer,
+                        Text.literal("• " + category),
+                        itemX,
+                        itemY,
+                        TEXT_COLOR
+                );
+
+                itemY += 12;
+
+                if (itemY > drawerY + drawerHeight - 12) {
+                    break;
+                }
+            }
+
+            context.getMatrices().pop();
         }
 
         context.getMatrices().pop();
@@ -621,6 +769,212 @@ public final class OverlayRenderer {
             }
 
             buttonX += width + 6;
+        }
+
+        return null;
+    }
+
+    public static boolean isFilterDrawerButtonAt(int mouseX, int mouseY, boolean filterDrawerOpen) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -62;
+        int layoutBottom = 210;
+
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        String[] filters = {
+                "All",
+                "Bound",
+                "Unused",
+                "Conflict",
+                "Mouse",
+                "Keyboard"
+        };
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        int searchX = layoutLeft + 12;
+        int searchWidth = 260;
+
+        int buttonX = searchX + searchWidth + 12;
+        int buttonY = -24;
+
+        for (String filter : filters) {
+            int width = textRenderer.getWidth(filter) + 12;
+            buttonX += width + 6;
+        }
+
+        int drawerButtonX = buttonX + 12;
+        int drawerButtonY = -24;
+
+        String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
+        int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
+
+        return localMouseX >= drawerButtonX
+                && localMouseX <= drawerButtonX + drawerWidth
+                && localMouseY >= drawerButtonY
+                && localMouseY <= drawerButtonY + 14;
+    }
+
+    public static String getDrawerQuickFilterQueryAt(int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -62;
+        int layoutBottom = 210;
+
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        int drawerX = 700;
+        int drawerY = layoutTop + 8;
+        int drawerPanelWidth = 190;
+
+        int itemX = drawerX + 14;
+        int itemY = drawerY + 46;
+
+        String[] drawerFilters = {
+                "All",
+                "Bound",
+                "Unused",
+                "Conflict",
+                "Mouse",
+                "Keyboard"
+        };
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String filter : drawerFilters) {
+            int width = Math.max(90, textRenderer.getWidth(filter) + 18);
+
+            if (localMouseX >= itemX
+                    && localMouseX <= itemX + width
+                    && localMouseY >= itemY - 2
+                    && localMouseY <= itemY + 10) {
+
+                return switch (filter) {
+                    case "All" -> "";
+                    case "Bound" -> "bound";
+                    case "Unused" -> "unused";
+                    case "Conflict" -> "conflict";
+                    case "Mouse" -> "mouse";
+                    case "Keyboard" -> "keyboard";
+                    default -> "";
+                };
+            }
+
+            itemY += 12;
+        }
+
+        return null;
+    }
+
+    public static String getDrawerCategoryQueryAt(int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutLeft = 0;
+        int layoutRight = 900;
+        int layoutTop = -62;
+        int layoutBottom = 210;
+
+        int layoutWidth = layoutRight - layoutLeft;
+        int layoutHeight = layoutBottom - layoutTop;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - layoutLeft * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - layoutTop * scale);
+
+        int localMouseX = (int) ((mouseX - originX) / scale);
+        int localMouseY = (int) ((mouseY - originY) / scale);
+
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        List<String> categories = bindingsByKey.values().stream()
+                .flatMap(List::stream)
+                .map(binding -> Text.translatable(binding.getCategory()).getString())
+                .distinct()
+                .sorted()
+                .toList();
+
+        int drawerX = 700;
+        int drawerY = layoutTop + 8;
+        int drawerHeight = layoutBottom - layoutTop - 16;
+
+        int itemX = drawerX + 14;
+        int itemY = drawerY + 46;
+
+        String[] drawerFilters = {
+                "All",
+                "Bound",
+                "Unused",
+                "Conflict",
+                "Mouse",
+                "Keyboard"
+        };
+
+        itemY += drawerFilters.length * 12;
+        itemY += 10; // gap before Categories
+        itemY += 14; // Categories header
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String category : categories) {
+            int width = Math.max(120, textRenderer.getWidth(category) + 18);
+
+            if (localMouseX >= itemX
+                    && localMouseX <= itemX + width
+                    && localMouseY >= itemY - 2
+                    && localMouseY <= itemY + 10) {
+                return category;
+            }
+
+            itemY += 12;
+
+            if (itemY > drawerY + drawerHeight - 12) {
+                break;
+            }
         }
 
         return null;

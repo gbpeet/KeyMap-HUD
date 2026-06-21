@@ -7,6 +7,8 @@ import net.minecraft.text.Text;
 public class KeyMapScreen extends Screen {
     private String searchQuery = "";
 
+    private boolean filterDrawerOpen = false;
+
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
     }
@@ -53,11 +55,33 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        OverlayRenderer.renderScreen(context, mouseX, mouseY, delta, searchQuery);
+        OverlayRenderer.renderScreen(
+                context,
+                mouseX,
+                mouseY,
+                delta,
+                searchQuery,
+                filterDrawerOpen
+        );
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+
+        if (OverlayRenderer.isFilterDrawerButtonAt((int) mouseX, (int) mouseY, filterDrawerOpen)) {
+            filterDrawerOpen = !filterDrawerOpen;
+            return true;
+        }
+
+        if (filterDrawerOpen) {
+            String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt((int) mouseX, (int) mouseY);
+
+            if (drawerQuickFilter != null) {
+                searchQuery = drawerQuickFilter;
+                return true;
+            }
+        }
+
         String quickFilter = OverlayRenderer.getQuickFilterQueryAt((int) mouseX, (int) mouseY);
 
         if (quickFilter != null) {
@@ -65,6 +89,21 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
+        String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt((int) mouseX, (int) mouseY);
+
+        if (categoryFilter != null) {
+            searchQuery = categoryFilter;
+            return true;
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    public boolean isFilterDrawerOpen() {
+        return filterDrawerOpen;
+    }
+
+    public void toggleFilterDrawer() {
+        filterDrawerOpen = !filterDrawerOpen;
     }
 }
