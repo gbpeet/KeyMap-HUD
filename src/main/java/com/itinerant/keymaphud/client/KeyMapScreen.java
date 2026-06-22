@@ -13,6 +13,7 @@ public class KeyMapScreen extends Screen {
     private boolean quickExpanded = true;
     private boolean categoriesExpanded = true;
     private boolean modsExpanded = false;
+    private final java.util.Set<String> expandedMods = new java.util.HashSet<>();
 
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
@@ -83,7 +84,8 @@ public class KeyMapScreen extends Screen {
                 drawerScroll,
                 quickExpanded,
                 categoriesExpanded,
-                modsExpanded
+                modsExpanded,
+                expandedMods
         );
     }
 

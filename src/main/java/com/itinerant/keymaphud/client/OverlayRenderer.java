@@ -56,7 +56,8 @@ public final class OverlayRenderer {
             int drawerScroll,
             boolean quickExpanded,
             boolean categoriesExpanded,
-            boolean modsExpanded
+            boolean modsExpanded,
+            java.util.Set<String> expandedMods
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -104,7 +105,8 @@ public final class OverlayRenderer {
                     drawerScroll,
                     quickExpanded,
                     categoriesExpanded,
-                    modsExpanded
+                    modsExpanded,
+                    expandedMods
             );
         }
 
@@ -181,7 +183,8 @@ public final class OverlayRenderer {
             int drawerScroll,
             boolean quickExpanded,
             boolean categoriesExpanded,
-            boolean modsExpanded
+            boolean modsExpanded,
+            java.util.Set<String> expandedMods
     ) {
         int drawerY = LAYOUT_TOP + 8;
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
@@ -271,15 +274,35 @@ public final class OverlayRenderer {
 
         if (modsExpanded) {
             for (String modName : getMods(bindingsByKey)) {
+                boolean modExpanded = expandedMods.contains(modName);
+
                 context.drawTextWithShadow(
                         textRenderer,
-                        Text.literal("▶ " + modName),
+                        Text.literal((modExpanded ? "▼ " : "▶ ") + modName),
                         itemX,
                         itemY,
                         TEXT_COLOR
                 );
 
                 itemY += DRAWER_LINE_HEIGHT;
+
+                if (modExpanded) {
+                    for (KeyBinding binding : getBindingsForCategory(bindingsByKey, modName)) {
+                        String actionName = Text.translatable(binding.getTranslationKey()).getString();
+
+                        context.drawTextWithShadow(
+                                textRenderer,
+                                Text.literal("  • " + actionName),
+                                itemX,
+                                itemY,
+                                0xFFBBBBBB
+                        );
+
+                        itemY += DRAWER_LINE_HEIGHT;
+                    }
+
+                    itemY += 4;
+                }
             }
         }
 
@@ -330,6 +353,20 @@ public final class OverlayRenderer {
                 )
                 .distinct()
                 .sorted()
+                .toList();
+    }
+
+    private static List<KeyBinding> getBindingsForCategory(
+            Map<Integer, List<KeyBinding>> bindingsByKey,
+            String categoryName
+    ) {
+        return bindingsByKey.values().stream()
+                .flatMap(List::stream)
+                .filter(binding -> Text.translatable(binding.getCategory()).getString().equals(categoryName))
+                .distinct()
+                .sorted(java.util.Comparator.comparing(binding ->
+                        Text.translatable(binding.getTranslationKey()).getString()
+                ))
                 .toList();
     }
 
@@ -864,7 +901,11 @@ public final class OverlayRenderer {
         contentHeight += 14;
 
         if (modsExpanded) {
-            contentHeight += getMods(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String modName : getMods(bindingsByKey)) {
+                contentHeight += DRAWER_LINE_HEIGHT; // mod header
+                contentHeight += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                contentHeight += 4; // gap after each mod
+            }
         }
 
         return Math.max(0, contentHeight - visibleContentHeight);
