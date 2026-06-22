@@ -80,13 +80,14 @@ public final class OverlayRenderer {
 
         drawMouseClusterLabel(context, textRenderer);
         drawTitle(context, textRenderer);
-        drawSearchAndTopFilters(context, textRenderer, searchQuery);
+        drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen);
         drawStatsBar(context, textRenderer, bindingsByKey);
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
             drawKey(context, textRenderer, bindingsByKey, key, searchQuery);
 
-            if (isMouseOverKey(key, localMouseX, localMouseY)) {
+            if (isMouseOverKey(key, localMouseX, localMouseY)
+                    && !(filterDrawerOpen && isLocalMouseInsideDrawer(localMouseX, localMouseY))) {
                 hoveredKey = key;
             }
         }
@@ -117,7 +118,12 @@ public final class OverlayRenderer {
         context.getMatrices().pop();
     }
 
-    private static void drawSearchAndTopFilters(DrawContext context, TextRenderer textRenderer, String searchQuery) {
+    private static void drawSearchAndTopFilters(
+            DrawContext context,
+            TextRenderer textRenderer,
+            String searchQuery,
+            boolean filterDrawerOpen
+    ) {
         int searchX = LAYOUT_LEFT + 12;
         int searchY = -24;
         int searchWidth = 260;
@@ -144,7 +150,7 @@ public final class OverlayRenderer {
         }
 
         int drawerButtonX = buttonX + 12;
-        String drawerLabel = "Filters ▼";
+        String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
         int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
         drawButton(context, textRenderer, drawerLabel, drawerButtonX, buttonY, drawerWidth);
     }
@@ -697,5 +703,15 @@ public final class OverlayRenderer {
         contentHeight += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
 
         return Math.max(0, contentHeight - visibleContentHeight);
+    }
+
+    private static boolean isLocalMouseInsideDrawer(int localMouseX, int localMouseY) {
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        return localMouseX >= DRAWER_X
+                && localMouseX <= DRAWER_X + DRAWER_WIDTH
+                && localMouseY >= drawerY
+                && localMouseY <= drawerY + drawerHeight;
     }
 }
