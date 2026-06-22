@@ -759,6 +759,68 @@ public final class OverlayRenderer {
         return null;
     }
 
+    public static String getDrawerModQueryAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded
+    ) {
+        if (!modsExpanded) {
+            return null;
+        }
+
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+        List<String> mods = getMods(bindingsByKey);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
+
+        itemY += 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        if (categoriesExpanded) {
+            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String modName : mods) {
+            int width = Math.max(120, textRenderer.getWidth(modName) + 18);
+
+            if (local.x() >= itemX
+                    && local.x() <= itemX + width
+                    && local.y() >= itemY - 2
+                    && local.y() <= itemY + 10
+                    && local.y() >= drawerY + 28
+                    && local.y() <= drawerY + drawerHeight) {
+                return modName;
+            }
+
+            itemY += DRAWER_LINE_HEIGHT;
+        }
+
+        return null;
+    }
+
     public static boolean isMouseInsideFilterDrawer(int mouseX, int mouseY) {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);

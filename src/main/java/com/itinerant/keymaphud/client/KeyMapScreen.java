@@ -158,6 +158,20 @@ public class KeyMapScreen extends Screen {
                 searchQuery = categoryFilter;
                 return true;
             }
+
+            String modFilter = OverlayRenderer.getDrawerModQueryAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    modsExpanded
+            );
+
+            if (modFilter != null) {
+                searchQuery = modFilter;
+                return true;
+            }
         }
 
         String quickFilter = OverlayRenderer.getQuickFilterQueryAt((int) mouseX, (int) mouseY);
