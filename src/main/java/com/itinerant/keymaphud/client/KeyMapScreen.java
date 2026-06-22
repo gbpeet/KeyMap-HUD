@@ -72,7 +72,10 @@ public class KeyMapScreen extends Screen {
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (filterDrawerOpen && OverlayRenderer.isMouseInsideFilterDrawer((int) mouseX, (int) mouseY)) {
             drawerScroll -= (int) Math.signum(verticalAmount) * 12;
-            drawerScroll = Math.max(0, drawerScroll);
+            drawerScroll = Math.max(
+                    0,
+                    Math.min(drawerScroll, OverlayRenderer.getMaxDrawerScroll())
+            );
             return true;
         }
 

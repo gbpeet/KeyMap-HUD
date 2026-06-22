@@ -681,4 +681,21 @@ public final class OverlayRenderer {
 
     private record LocalMouse(int x, int y) {
     }
+
+    public static int getMaxDrawerScroll() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+        int visibleContentHeight = drawerHeight - 32;
+
+        int contentHeight = 0;
+        contentHeight += 14; // Quick header
+        contentHeight += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+        contentHeight += 10; // gap
+        contentHeight += 14; // Categories header
+        contentHeight += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+
+        return Math.max(0, contentHeight - visibleContentHeight);
+    }
 }
