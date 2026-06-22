@@ -88,7 +88,7 @@ public class KeyMapScreen extends Screen {
         }
 
         if (filterDrawerOpen) {
-            String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt((int) mouseX, (int) mouseY);
+            String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt((int) mouseX, (int) mouseY, drawerScroll);
 
             if (drawerQuickFilter != null) {
                 searchQuery = drawerQuickFilter;
@@ -103,7 +103,7 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
-        String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt((int) mouseX, (int) mouseY);
+        String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt((int) mouseX, (int) mouseY, drawerScroll);
 
         if (categoryFilter != null) {
             searchQuery = categoryFilter;
