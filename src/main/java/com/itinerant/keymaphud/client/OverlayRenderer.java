@@ -213,6 +213,8 @@ public final class OverlayRenderer {
             itemY += DRAWER_LINE_HEIGHT;
         }
 
+        drawDrawerScrollbar(context, drawerY, drawerHeight, drawerScroll);
+
         context.disableScissor();
         context.getMatrices().pop();
     }
@@ -713,5 +715,36 @@ public final class OverlayRenderer {
                 && localMouseX <= DRAWER_X + DRAWER_WIDTH
                 && localMouseY >= drawerY
                 && localMouseY <= drawerY + drawerHeight;
+    }
+
+    private static void drawDrawerScrollbar(DrawContext context, int drawerY, int drawerHeight, int drawerScroll) {
+        int maxScroll = getMaxDrawerScroll();
+
+        if (maxScroll <= 0) {
+            return;
+        }
+
+        int trackX = DRAWER_X + DRAWER_WIDTH - 6;
+        int trackY = drawerY + 28;
+        int trackHeight = drawerHeight - 34;
+
+        context.fill(
+                trackX,
+                trackY,
+                trackX + 3,
+                trackY + trackHeight,
+                0xFF303030
+        );
+
+        int thumbHeight = Math.max(18, trackHeight * trackHeight / (trackHeight + maxScroll));
+        int thumbY = trackY + (int) ((trackHeight - thumbHeight) * (drawerScroll / (float) maxScroll));
+
+        context.fill(
+                trackX,
+                thumbY,
+                trackX + 3,
+                thumbY + thumbHeight,
+                0xFFAAAAAA
+        );
     }
 }
