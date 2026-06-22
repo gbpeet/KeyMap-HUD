@@ -110,6 +110,27 @@ public class KeyMapScreen extends Screen {
         }
 
         if (filterDrawerOpen) {
+            String section = OverlayRenderer.getDrawerSectionHeaderAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded
+            );
+
+            if (section != null) {
+                switch (section) {
+                    case "quick" -> quickExpanded = !quickExpanded;
+                    case "categories" -> categoriesExpanded = !categoriesExpanded;
+                    case "mods" -> modsExpanded = !modsExpanded;
+                }
+
+                drawerScroll = Math.min(drawerScroll, OverlayRenderer.getMaxDrawerScroll());
+                return true;
+            }
+        }
+
+        if (filterDrawerOpen) {
             String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt((int) mouseX, (int) mouseY, drawerScroll);
 
             if (drawerQuickFilter != null) {

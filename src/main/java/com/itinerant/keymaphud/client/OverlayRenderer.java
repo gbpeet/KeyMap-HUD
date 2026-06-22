@@ -813,4 +813,62 @@ public final class OverlayRenderer {
                 0xFFAAAAAA
         );
     }
+
+    public static String getDrawerSectionHeaderAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded
+    ) {
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
+
+        if (isInsideDrawerHeader(local, itemX, itemY)) {
+            return "quick";
+        }
+
+        itemY += 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        if (isInsideDrawerHeader(local, itemX, itemY)) {
+            return "categories";
+        }
+
+        itemY += 14;
+
+        if (categoriesExpanded) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        if (isInsideDrawerHeader(local, itemX, itemY)) {
+            return "mods";
+        }
+
+        return null;
+    }
+
+    private static boolean isInsideDrawerHeader(LocalMouse local, int itemX, int itemY) {
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        return local.x() >= itemX
+                && local.x() <= DRAWER_X + DRAWER_WIDTH - 10
+                && local.y() >= itemY - 2
+                && local.y() <= itemY + 10
+                && local.y() >= drawerY + 28
+                && local.y() <= drawerY + drawerHeight;
+    }
 }
