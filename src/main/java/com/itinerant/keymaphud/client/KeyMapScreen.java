@@ -53,7 +53,7 @@ public class KeyMapScreen extends Screen {
         if (filterDrawerOpen && keyCode == 264) { // Down arrow
             drawerScroll = Math.min(
                     drawerScroll + 12,
-                    OverlayRenderer.getMaxDrawerScroll()
+                    OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
             );
             return true;
         }
@@ -93,7 +93,10 @@ public class KeyMapScreen extends Screen {
             drawerScroll -= (int) Math.signum(verticalAmount) * 12;
             drawerScroll = Math.max(
                     0,
-                    Math.min(drawerScroll, OverlayRenderer.getMaxDrawerScroll())
+                    Math.min(
+                            drawerScroll,
+                            OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                    )
             );
             return true;
         }
@@ -103,7 +106,6 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-
         if (OverlayRenderer.isFilterDrawerButtonAt((int) mouseX, (int) mouseY, filterDrawerOpen)) {
             filterDrawerOpen = !filterDrawerOpen;
             return true;
@@ -125,16 +127,35 @@ public class KeyMapScreen extends Screen {
                     case "mods" -> modsExpanded = !modsExpanded;
                 }
 
-                drawerScroll = Math.min(drawerScroll, OverlayRenderer.getMaxDrawerScroll());
+                drawerScroll = Math.min(
+                        drawerScroll,
+                        OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                );
                 return true;
             }
-        }
 
-        if (filterDrawerOpen) {
-            String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt((int) mouseX, (int) mouseY, drawerScroll);
+            String drawerQuickFilter = OverlayRenderer.getDrawerQuickFilterQueryAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded
+            );
 
             if (drawerQuickFilter != null) {
                 searchQuery = drawerQuickFilter;
+                return true;
+            }
+
+            String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded
+            );
+
+            if (categoryFilter != null) {
+                searchQuery = categoryFilter;
                 return true;
             }
         }
@@ -146,21 +167,6 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
-        String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt((int) mouseX, (int) mouseY, drawerScroll);
-
-        if (categoryFilter != null) {
-            searchQuery = categoryFilter;
-            return true;
-        }
-
         return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    public boolean isFilterDrawerOpen() {
-        return filterDrawerOpen;
-    }
-
-    public void toggleFilterDrawer() {
-        filterDrawerOpen = !filterDrawerOpen;
     }
 }

@@ -270,16 +270,28 @@ public final class OverlayRenderer {
         itemY += 14;
 
         if (modsExpanded) {
-            context.drawTextWithShadow(
-                    textRenderer,
-                    Text.literal("Coming soon..."),
-                    itemX + 10,
-                    itemY,
-                    0xFF777777
-            );
+            for (String modName : getMods(bindingsByKey)) {
+                context.drawTextWithShadow(
+                        textRenderer,
+                        Text.literal("▶ " + modName),
+                        itemX,
+                        itemY,
+                        TEXT_COLOR
+                );
+
+                itemY += DRAWER_LINE_HEIGHT;
+            }
         }
 
-        drawDrawerScrollbar(context, drawerY, drawerHeight, drawerScroll);
+        drawDrawerScrollbar(
+                context,
+                drawerY,
+                drawerHeight,
+                drawerScroll,
+                quickExpanded,
+                categoriesExpanded,
+                modsExpanded
+        );
 
         context.disableScissor();
         context.getMatrices().pop();
@@ -289,6 +301,33 @@ public final class OverlayRenderer {
         return bindingsByKey.values().stream()
                 .flatMap(List::stream)
                 .map(binding -> Text.translatable(binding.getCategory()).getString())
+                .filter(category ->
+                        category.equals("Movement")
+                                || category.equals("Gameplay")
+                                || category.equals("Inventory")
+                                || category.equals("Multiplayer")
+                                || category.equals("Creative Mode")
+                                || category.equals("Miscellaneous")
+                                || category.equals("UI")
+                )
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private static List<String> getMods(Map<Integer, List<KeyBinding>> bindingsByKey) {
+        return bindingsByKey.values().stream()
+                .flatMap(List::stream)
+                .map(binding -> Text.translatable(binding.getCategory()).getString())
+                .filter(category ->
+                        !category.equals("Movement")
+                                && !category.equals("Gameplay")
+                                && !category.equals("Inventory")
+                                && !category.equals("Multiplayer")
+                                && !category.equals("Creative Mode")
+                                && !category.equals("Miscellaneous")
+                                && !category.equals("UI")
+                )
                 .distinct()
                 .sorted()
                 .toList();
@@ -628,7 +667,16 @@ public final class OverlayRenderer {
                 && local.y() <= buttonY + 14;
     }
 
-    public static String getDrawerQuickFilterQueryAt(int mouseX, int mouseY, int drawerScroll) {
+    public static String getDrawerQuickFilterQueryAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded
+    ) {
+        if (!quickExpanded) {
+            return null;
+        }
+
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
@@ -657,7 +705,17 @@ public final class OverlayRenderer {
         return null;
     }
 
-    public static String getDrawerCategoryQueryAt(int mouseX, int mouseY, int drawerScroll) {
+    public static String getDrawerCategoryQueryAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded
+    ) {
+        if (!categoriesExpanded) {
+            return null;
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
 
         LayoutInfo layout = getLayoutInfo();
@@ -673,8 +731,12 @@ public final class OverlayRenderer {
         int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
 
         itemY += 14;
-        itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
-        itemY += 10;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
         itemY += 14;
 
         TextRenderer textRenderer = client.textRenderer;
@@ -710,53 +772,11 @@ public final class OverlayRenderer {
                 && local.y() <= drawerY + drawerHeight;
     }
 
-    private static String queryForFilter(String filter) {
-        return switch (filter) {
-            case "All" -> "";
-            case "Bound" -> "bound";
-            case "Unused" -> "unused";
-            case "Conflict" -> "conflict";
-            case "Mouse" -> "mouse";
-            case "Keyboard" -> "keyboard";
-            default -> "";
-        };
-    }
-
-    private static LayoutInfo getLayoutInfo() {
-        MinecraftClient client = MinecraftClient.getInstance();
-
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
-
-        int layoutWidth = LAYOUT_RIGHT - LAYOUT_LEFT;
-        int layoutHeight = LAYOUT_BOTTOM - LAYOUT_TOP;
-
-        float scale = Math.min(
-                (screenWidth - 24) / (float) layoutWidth,
-                (screenHeight - 24) / (float) layoutHeight
-        );
-        scale = Math.min(scale, 1.0f);
-
-        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - LAYOUT_LEFT * scale);
-        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - LAYOUT_TOP * scale);
-
-        return new LayoutInfo(originX, originY, scale, layoutWidth, layoutHeight);
-    }
-
-    private static LocalMouse toLocalMouse(int mouseX, int mouseY, LayoutInfo layout) {
-        return new LocalMouse(
-                (int) ((mouseX - layout.originX()) / layout.scale()),
-                (int) ((mouseY - layout.originY()) / layout.scale())
-        );
-    }
-
-    private record LayoutInfo(int originX, int originY, float scale, int width, int height) {
-    }
-
-    private record LocalMouse(int x, int y) {
-    }
-
-    public static int getMaxDrawerScroll() {
+    public static int getMaxDrawerScroll(
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded
+    ) {
         MinecraftClient client = MinecraftClient.getInstance();
         Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
 
@@ -764,54 +784,28 @@ public final class OverlayRenderer {
         int visibleContentHeight = drawerHeight - 32;
 
         int contentHeight = 0;
-        contentHeight += 14; // Quick header
-        contentHeight += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
-        contentHeight += 10; // gap
-        contentHeight += 14; // Categories header
-        contentHeight += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
 
-        return Math.max(0, contentHeight - visibleContentHeight);
-    }
+        contentHeight += 14;
 
-    private static boolean isLocalMouseInsideDrawer(int localMouseX, int localMouseY) {
-        int drawerY = LAYOUT_TOP + 8;
-        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
-
-        return localMouseX >= DRAWER_X
-                && localMouseX <= DRAWER_X + DRAWER_WIDTH
-                && localMouseY >= drawerY
-                && localMouseY <= drawerY + drawerHeight;
-    }
-
-    private static void drawDrawerScrollbar(DrawContext context, int drawerY, int drawerHeight, int drawerScroll) {
-        int maxScroll = getMaxDrawerScroll();
-
-        if (maxScroll <= 0) {
-            return;
+        if (quickExpanded) {
+            contentHeight += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            contentHeight += 10;
         }
 
-        int trackX = DRAWER_X + DRAWER_WIDTH - 6;
-        int trackY = drawerY + 28;
-        int trackHeight = drawerHeight - 34;
+        contentHeight += 14;
 
-        context.fill(
-                trackX,
-                trackY,
-                trackX + 3,
-                trackY + trackHeight,
-                0xFF303030
-        );
+        if (categoriesExpanded) {
+            contentHeight += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            contentHeight += 10;
+        }
 
-        int thumbHeight = Math.max(18, trackHeight * trackHeight / (trackHeight + maxScroll));
-        int thumbY = trackY + (int) ((trackHeight - thumbHeight) * (drawerScroll / (float) maxScroll));
+        contentHeight += 14;
 
-        context.fill(
-                trackX,
-                thumbY,
-                trackX + 3,
-                thumbY + thumbHeight,
-                0xFFAAAAAA
-        );
+        if (modsExpanded) {
+            contentHeight += getMods(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+        }
+
+        return Math.max(0, contentHeight - visibleContentHeight);
     }
 
     public static String getDrawerSectionHeaderAt(
@@ -860,6 +854,43 @@ public final class OverlayRenderer {
         return null;
     }
 
+    private static void drawDrawerScrollbar(
+            DrawContext context,
+            int drawerY,
+            int drawerHeight,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded
+    ) {
+        int maxScroll = getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded);
+
+        if (maxScroll <= 0) {
+            return;
+        }
+
+        int trackX = DRAWER_X + DRAWER_WIDTH - 6;
+        int trackY = drawerY + 28;
+        int trackHeight = drawerHeight - 34;
+
+        context.fill(trackX, trackY, trackX + 3, trackY + trackHeight, 0xFF303030);
+
+        int thumbHeight = Math.max(18, trackHeight * trackHeight / (trackHeight + maxScroll));
+        int thumbY = trackY + (int) ((trackHeight - thumbHeight) * (drawerScroll / (float) maxScroll));
+
+        context.fill(trackX, thumbY, trackX + 3, thumbY + thumbHeight, 0xFFAAAAAA);
+    }
+
+    private static boolean isLocalMouseInsideDrawer(int localMouseX, int localMouseY) {
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        return localMouseX >= DRAWER_X
+                && localMouseX <= DRAWER_X + DRAWER_WIDTH
+                && localMouseY >= drawerY
+                && localMouseY <= drawerY + drawerHeight;
+    }
+
     private static boolean isInsideDrawerHeader(LocalMouse local, int itemX, int itemY) {
         int drawerY = LAYOUT_TOP + 8;
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
@@ -870,5 +901,51 @@ public final class OverlayRenderer {
                 && local.y() <= itemY + 10
                 && local.y() >= drawerY + 28
                 && local.y() <= drawerY + drawerHeight;
+    }
+
+    private static String queryForFilter(String filter) {
+        return switch (filter) {
+            case "All" -> "";
+            case "Bound" -> "bound";
+            case "Unused" -> "unused";
+            case "Conflict" -> "conflict";
+            case "Mouse" -> "mouse";
+            case "Keyboard" -> "keyboard";
+            default -> "";
+        };
+    }
+
+    private static LayoutInfo getLayoutInfo() {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int layoutWidth = LAYOUT_RIGHT - LAYOUT_LEFT;
+        int layoutHeight = LAYOUT_BOTTOM - LAYOUT_TOP;
+
+        float scale = Math.min(
+                (screenWidth - 24) / (float) layoutWidth,
+                (screenHeight - 24) / (float) layoutHeight
+        );
+        scale = Math.min(scale, 1.0f);
+
+        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - LAYOUT_LEFT * scale);
+        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - LAYOUT_TOP * scale);
+
+        return new LayoutInfo(originX, originY, scale, layoutWidth, layoutHeight);
+    }
+
+    private static LocalMouse toLocalMouse(int mouseX, int mouseY, LayoutInfo layout) {
+        return new LocalMouse(
+                (int) ((mouseX - layout.originX()) / layout.scale()),
+                (int) ((mouseY - layout.originY()) / layout.scale())
+        );
+    }
+
+    private record LayoutInfo(int originX, int originY, float scale, int width, int height) {
+    }
+
+    private record LocalMouse(int x, int y) {
     }
 }
