@@ -10,6 +10,9 @@ public class KeyMapScreen extends Screen {
     private int drawerScroll = 0;
 
     private boolean filterDrawerOpen = false;
+    private boolean quickExpanded = true;
+    private boolean categoriesExpanded = true;
+    private boolean modsExpanded = false;
 
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
@@ -47,6 +50,19 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
+        if (filterDrawerOpen && keyCode == 264) { // Down arrow
+            drawerScroll = Math.min(
+                    drawerScroll + 12,
+                    OverlayRenderer.getMaxDrawerScroll()
+            );
+            return true;
+        }
+
+        if (filterDrawerOpen && keyCode == 265) { // Up arrow
+            drawerScroll = Math.max(0, drawerScroll - 12);
+            return true;
+        }
+
         if (keyCode == 259 && !searchQuery.isEmpty()) { // Backspace
             searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
             return true;
@@ -64,7 +80,10 @@ public class KeyMapScreen extends Screen {
                 delta,
                 searchQuery,
                 filterDrawerOpen,
-                drawerScroll
+                drawerScroll,
+                quickExpanded,
+                categoriesExpanded,
+                modsExpanded
         );
     }
 

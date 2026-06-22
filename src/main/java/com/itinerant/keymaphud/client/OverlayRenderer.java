@@ -53,7 +53,10 @@ public final class OverlayRenderer {
             float delta,
             String searchQuery,
             boolean filterDrawerOpen,
-            int drawerScroll
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -93,7 +96,16 @@ public final class OverlayRenderer {
         }
 
         if (filterDrawerOpen) {
-            drawFilterDrawer(context, textRenderer, bindingsByKey, layout, drawerScroll);
+            drawFilterDrawer(
+                    context,
+                    textRenderer,
+                    bindingsByKey,
+                    layout,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    modsExpanded
+            );
         }
 
         context.getMatrices().pop();
@@ -166,7 +178,10 @@ public final class OverlayRenderer {
             TextRenderer textRenderer,
             Map<Integer, List<KeyBinding>> bindingsByKey,
             LayoutInfo layout,
-            int drawerScroll
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded
     ) {
         int drawerY = LAYOUT_TOP + 8;
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
@@ -195,22 +210,73 @@ public final class OverlayRenderer {
         int itemX = DRAWER_X + DRAWER_PADDING;
         int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
 
-        context.drawTextWithShadow(textRenderer, Text.literal("Quick"), itemX, itemY, 0xFFAAAAAA);
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal((quickExpanded ? "▼ " : "▶ ") + "Quick"),
+                itemX,
+                itemY,
+                0xFFAAAAAA
+        );
         itemY += 14;
 
-        for (String filter : QUICK_FILTERS) {
-            context.drawTextWithShadow(textRenderer, Text.literal("• " + filter), itemX, itemY, TEXT_COLOR);
-            itemY += DRAWER_LINE_HEIGHT;
+        if (quickExpanded) {
+            for (String filter : QUICK_FILTERS) {
+                context.drawTextWithShadow(
+                        textRenderer,
+                        Text.literal("• " + filter),
+                        itemX,
+                        itemY,
+                        TEXT_COLOR
+                );
+
+                itemY += DRAWER_LINE_HEIGHT;
+            }
+
+            itemY += 10;
         }
 
-        itemY += 10;
-
-        context.drawTextWithShadow(textRenderer, Text.literal("Categories"), itemX, itemY, 0xFFAAAAAA);
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal((categoriesExpanded ? "▼ " : "▶ ") + "Categories"),
+                itemX,
+                itemY,
+                0xFFAAAAAA
+        );
         itemY += 14;
 
-        for (String category : getCategories(bindingsByKey)) {
-            context.drawTextWithShadow(textRenderer, Text.literal("• " + category), itemX, itemY, TEXT_COLOR);
-            itemY += DRAWER_LINE_HEIGHT;
+        if (categoriesExpanded) {
+            for (String category : getCategories(bindingsByKey)) {
+                context.drawTextWithShadow(
+                        textRenderer,
+                        Text.literal("• " + category),
+                        itemX,
+                        itemY,
+                        TEXT_COLOR
+                );
+
+                itemY += DRAWER_LINE_HEIGHT;
+            }
+
+            itemY += 10;
+        }
+
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal((modsExpanded ? "▼ " : "▶ ") + "Mods"),
+                itemX,
+                itemY,
+                0xFFAAAAAA
+        );
+        itemY += 14;
+
+        if (modsExpanded) {
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Coming soon..."),
+                    itemX + 10,
+                    itemY,
+                    0xFF777777
+            );
         }
 
         drawDrawerScrollbar(context, drawerY, drawerHeight, drawerScroll);
