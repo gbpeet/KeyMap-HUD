@@ -443,6 +443,28 @@ public final class OverlayRenderer {
 
         String query = searchQuery.toLowerCase();
 
+        if (query.startsWith("action:")) {
+            String exact = searchQuery.substring("action:".length());
+
+            int separator = exact.indexOf('|');
+
+            if (separator > 0) {
+                String targetCategory = exact.substring(0, separator);
+                String targetAction = exact.substring(separator + 1);
+
+                for (KeyBinding binding : bindings) {
+                    String category = Text.translatable(binding.getCategory()).getString();
+                    String action = Text.translatable(binding.getTranslationKey()).getString();
+
+                    if (category.equals(targetCategory) && action.equals(targetAction)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         if (query.equals("mouse")) return key.label().contains("MB");
         if (query.equals("left mouse")) return key.label().equals("LMB");
         if (query.equals("right mouse")) return key.label().equals("RMB");
@@ -938,7 +960,7 @@ public final class OverlayRenderer {
                                     && local.x() <= actionX + width;
 
                     if (insideVisibleDrawer && onThisRow && onAction) {
-                        return actionName;
+                        return "action:" + modName + "|" + actionName;
                     }
 
                     itemY += DRAWER_LINE_HEIGHT;
