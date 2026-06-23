@@ -802,7 +802,8 @@ public final class OverlayRenderer {
             int drawerScroll,
             boolean quickExpanded,
             boolean categoriesExpanded,
-            boolean modsExpanded
+            boolean modsExpanded,
+            java.util.Set<String> expandedMods
     ) {
         if (!modsExpanded) {
             return null;
@@ -843,16 +844,98 @@ public final class OverlayRenderer {
         for (String modName : mods) {
             int width = Math.max(120, textRenderer.getWidth(modName) + 18);
 
-            if (local.x() >= itemX
-                    && local.x() <= itemX + width
-                    && local.y() >= itemY - 2
-                    && local.y() <= itemY + 10
-                    && local.y() >= drawerY + 28
-                    && local.y() <= drawerY + drawerHeight) {
+            boolean insideVisibleDrawer =
+                    local.y() >= drawerY + 28
+                            && local.y() <= drawerY + drawerHeight;
+
+            boolean onThisRow =
+                    local.y() >= itemY - 2
+                            && local.y() <= itemY + 10;
+
+            boolean onModName =
+                    local.x() >= itemX + 12
+                            && local.x() <= itemX + width;
+
+            if (insideVisibleDrawer && onThisRow && onModName) {
                 return modName;
             }
 
             itemY += DRAWER_LINE_HEIGHT;
+
+            if (expandedMods.contains(modName)) {
+                itemY += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                itemY += 4;
+            }
+        }
+
+        return null;
+    }
+
+    public static String getDrawerModArrowAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded,
+            java.util.Set<String> expandedMods
+    ) {
+        if (!modsExpanded) {
+            return null;
+        }
+
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
+
+        itemY += 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        if (categoriesExpanded) {
+            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        for (String modName : getMods(bindingsByKey)) {
+            boolean insideVisibleDrawer =
+                    local.y() >= drawerY + 28
+                            && local.y() <= drawerY + drawerHeight;
+
+            boolean onThisRow =
+                    local.y() >= itemY - 2
+                            && local.y() <= itemY + 10;
+
+            boolean onArrow =
+                    local.x() >= itemX
+                            && local.x() <= itemX + 10;
+
+            if (insideVisibleDrawer && onThisRow && onArrow) {
+                return modName;
+            }
+
+            itemY += DRAWER_LINE_HEIGHT;
+
+            if (expandedMods.contains(modName)) {
+                itemY += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                itemY += 4;
+            }
         }
 
         return null;

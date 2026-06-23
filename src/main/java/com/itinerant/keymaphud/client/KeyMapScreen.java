@@ -161,13 +161,39 @@ public class KeyMapScreen extends Screen {
                 return true;
             }
 
+            String modArrow = OverlayRenderer.getDrawerModArrowAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    modsExpanded,
+                    expandedMods
+            );
+
+            if (modArrow != null) {
+                if (expandedMods.contains(modArrow)) {
+                    expandedMods.remove(modArrow);
+                } else {
+                    expandedMods.add(modArrow);
+                }
+
+                drawerScroll = Math.min(
+                        drawerScroll,
+                        OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                );
+
+                return true;
+            }
+
             String modFilter = OverlayRenderer.getDrawerModQueryAt(
                     (int) mouseX,
                     (int) mouseY,
                     drawerScroll,
                     quickExpanded,
                     categoriesExpanded,
-                    modsExpanded
+                    modsExpanded,
+                    expandedMods
             );
 
             if (modFilter != null) {
