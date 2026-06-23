@@ -443,6 +443,34 @@ public final class OverlayRenderer {
 
         String query = searchQuery.toLowerCase();
 
+        if (query.startsWith("category:")) {
+            String targetCategory = searchQuery.substring("category:".length());
+
+            for (KeyBinding binding : bindings) {
+                String category = Text.translatable(binding.getCategory()).getString();
+
+                if (category.equals(targetCategory)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (query.startsWith("mod:")) {
+            String targetMod = searchQuery.substring("mod:".length());
+
+            for (KeyBinding binding : bindings) {
+                String category = Text.translatable(binding.getCategory()).getString();
+
+                if (category.equals(targetMod)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         if (query.startsWith("action:")) {
             String exact = searchQuery.substring("action:".length());
 
@@ -809,7 +837,7 @@ public final class OverlayRenderer {
                     && local.y() <= itemY + 10
                     && local.y() >= drawerY + 28
                     && local.y() <= drawerY + drawerHeight) {
-                return category;
+                return "category:" + category;
             }
 
             itemY += DRAWER_LINE_HEIGHT;
@@ -879,7 +907,7 @@ public final class OverlayRenderer {
                             && local.x() <= itemX + width;
 
             if (insideVisibleDrawer && onThisRow && onModName) {
-                return modName;
+                return "mod:" + modName;
             }
 
             itemY += DRAWER_LINE_HEIGHT;
