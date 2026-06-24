@@ -34,6 +34,9 @@ public final class OverlayRenderer {
     private static final int DRAWER_HEADER_Y_OFFSET = 12;
     private static final int DRAWER_CONTENT_Y_OFFSET = 32;
 
+    private static final int DRAWER_HOVER_COLOR = 0x553A3A3A;
+    private static final int DRAWER_SELECTED_COLOR = 0x885577AA;
+
     private static final String[] QUICK_FILTERS = {
             "All",
             "Bound",
@@ -102,6 +105,9 @@ public final class OverlayRenderer {
                     textRenderer,
                     bindingsByKey,
                     layout,
+                    mouseX,
+                    mouseY,
+                    searchQuery,
                     drawerScroll,
                     quickExpanded,
                     categoriesExpanded,
@@ -175,11 +181,41 @@ public final class OverlayRenderer {
         context.drawTextWithShadow(textRenderer, Text.literal(label), x + 6, y + 3, TEXT_COLOR);
     }
 
+    private static void drawDrawerRowBackground(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            boolean hovered,
+            boolean selected
+    ) {
+        if (selected) {
+            context.fill(
+                    x - 4,
+                    y - 2,
+                    x + width + 4,
+                    y + DRAWER_LINE_HEIGHT - 1,
+                    DRAWER_SELECTED_COLOR
+            );
+        } else if (hovered) {
+            context.fill(
+                    x - 4,
+                    y - 2,
+                    x + width + 4,
+                    y + DRAWER_LINE_HEIGHT - 1,
+                    DRAWER_HOVER_COLOR
+            );
+        }
+    }
+
     private static void drawFilterDrawer(
             DrawContext context,
             TextRenderer textRenderer,
             Map<Integer, List<KeyBinding>> bindingsByKey,
             LayoutInfo layout,
+            int mouseX,
+            int mouseY,
+            String searchQuery,
             int drawerScroll,
             boolean quickExpanded,
             boolean categoriesExpanded,
@@ -188,6 +224,10 @@ public final class OverlayRenderer {
     ) {
         int drawerY = LAYOUT_TOP + 8;
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+        int localMouseX = local.x();
+        int localMouseY = local.y();
 
         context.getMatrices().push();
         context.getMatrices().translate(0, 0, 400);
@@ -224,6 +264,25 @@ public final class OverlayRenderer {
 
         if (quickExpanded) {
             for (String filter : QUICK_FILTERS) {
+                String filterQuery = queryForFilter(filter);
+
+                boolean selected = searchQuery.equals(filterQuery);
+
+                boolean hovered =
+                        localMouseX >= itemX
+                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                && localMouseY >= itemY - 2
+                                && localMouseY <= itemY + 10;
+
+                drawDrawerRowBackground(
+                        context,
+                        itemX,
+                        itemY,
+                        160,
+                        hovered,
+                        selected
+                );
+
                 context.drawTextWithShadow(
                         textRenderer,
                         Text.literal("• " + filter),
@@ -234,7 +293,6 @@ public final class OverlayRenderer {
 
                 itemY += DRAWER_LINE_HEIGHT;
             }
-
             itemY += 10;
         }
 
@@ -249,6 +307,25 @@ public final class OverlayRenderer {
 
         if (categoriesExpanded) {
             for (String category : getCategories(bindingsByKey)) {
+                String categoryQuery = "category:" + category;
+
+                boolean selected = searchQuery.equals(categoryQuery);
+
+                boolean hovered =
+                        localMouseX >= itemX
+                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                && localMouseY >= itemY - 2
+                                && localMouseY <= itemY + 10;
+
+                drawDrawerRowBackground(
+                        context,
+                        itemX,
+                        itemY,
+                        160,
+                        hovered,
+                        selected
+                );
+
                 context.drawTextWithShadow(
                         textRenderer,
                         Text.literal("• " + category),
@@ -276,6 +353,24 @@ public final class OverlayRenderer {
             for (String modName : getMods(bindingsByKey)) {
                 boolean modExpanded = expandedMods.contains(modName);
 
+                boolean selected =
+                        searchQuery.equals("mod:" + modName);
+
+                boolean hovered =
+                        localMouseX >= itemX
+                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                && localMouseY >= itemY - 2
+                                && localMouseY <= itemY + 10;
+
+                drawDrawerRowBackground(
+                        context,
+                        itemX,
+                        itemY,
+                        160,
+                        hovered,
+                        selected
+                );
+
                 context.drawTextWithShadow(
                         textRenderer,
                         Text.literal((modExpanded ? "▼ " : "▶ ") + modName),
@@ -289,6 +384,24 @@ public final class OverlayRenderer {
                 if (modExpanded) {
                     for (KeyBinding binding : getBindingsForCategory(bindingsByKey, modName)) {
                         String actionName = Text.translatable(binding.getTranslationKey()).getString();
+                        String actionQuery = "action:" + modName + "|" + actionName;
+
+                        boolean actionSelected = searchQuery.equals(actionQuery);
+
+                        boolean actionHovered =
+                                localMouseX >= itemX + 12
+                                        && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                        && localMouseY >= itemY - 2
+                                        && localMouseY <= itemY + 10;
+
+                        drawDrawerRowBackground(
+                                context,
+                                itemX + 12,
+                                itemY,
+                                148,
+                                actionHovered,
+                                actionSelected
+                        );
 
                         context.drawTextWithShadow(
                                 textRenderer,
