@@ -27,8 +27,8 @@ public final class OverlayRenderer {
     private static final int LAYOUT_TOP = -62;
     private static final int LAYOUT_BOTTOM = 210;
 
-    private static final int DRAWER_X = 700;
-    private static final int DRAWER_WIDTH = 190;
+    private static final int DRAWER_X = 650;
+    private static final int DRAWER_WIDTH = 240;
     private static final int DRAWER_PADDING = 14;
     private static final int DRAWER_LINE_HEIGHT = 12;
     private static final int DRAWER_HEADER_Y_OFFSET = 12;
@@ -36,6 +36,10 @@ public final class OverlayRenderer {
 
     private static final int DRAWER_HOVER_COLOR = 0x553A3A3A;
     private static final int DRAWER_SELECTED_COLOR = 0x885577AA;
+
+    private static final int ACTION_BOUND_COLOR = 0xFFFFCC55;
+    private static final int ACTION_UNBOUND_COLOR = 0xFF888888;
+    private static final int ACTION_CONFLICT_COLOR = 0xFFFF6666;
 
     private static final String[] QUICK_FILTERS = {
             "All",
@@ -154,7 +158,7 @@ public final class OverlayRenderer {
 
         context.drawTextWithShadow(
                 textRenderer,
-                Text.literal(searchQuery == null || searchQuery.isBlank() ? "Search..." : searchQuery + "_"),
+                Text.literal(displaySearchQuery(searchQuery)),
                 searchX + 6,
                 searchY + 4,
                 0xFFAAAAAA
@@ -169,7 +173,7 @@ public final class OverlayRenderer {
             buttonX += width + 6;
         }
 
-        int drawerButtonX = buttonX + 12;
+        int drawerButtonX = buttonX;
         String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
         int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
         drawButton(context, textRenderer, drawerLabel, drawerButtonX, buttonY, drawerWidth);
@@ -382,9 +386,11 @@ public final class OverlayRenderer {
                 itemY += DRAWER_LINE_HEIGHT;
 
                 if (modExpanded) {
-                    for (KeyBinding binding : getBindingsForCategory(bindingsByKey, modName)) {
+                    for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), modName)) {
                         String actionName = Text.translatable(binding.getTranslationKey()).getString();
                         String actionQuery = "action:" + modName + "|" + actionName;
+                        String bindingLabel = getBindingDisplayName(binding);
+                        int actionColor = getActionStatusColor(binding);
 
                         boolean actionSelected = searchQuery.equals(actionQuery);
 
@@ -398,17 +404,27 @@ public final class OverlayRenderer {
                                 context,
                                 itemX + 12,
                                 itemY,
-                                148,
+                                DRAWER_WIDTH - DRAWER_PADDING - 24,
                                 actionHovered,
                                 actionSelected
                         );
 
                         context.drawTextWithShadow(
                                 textRenderer,
-                                Text.literal("  • " + actionName),
+                                Text.literal("  • " + truncateToWidth(textRenderer, actionName, 205)),
                                 itemX,
                                 itemY,
-                                0xFFBBBBBB
+                                actionColor
+                        );
+
+                        int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+
+                        context.drawTextWithShadow(
+                                textRenderer,
+                                Text.literal(bindingLabel),
+                                bindingLabelX,
+                                itemY,
+                                actionColor
                         );
 
                         itemY += DRAWER_LINE_HEIGHT;
@@ -434,8 +450,7 @@ public final class OverlayRenderer {
     }
 
     private static List<String> getCategories(Map<Integer, List<KeyBinding>> bindingsByKey) {
-        return bindingsByKey.values().stream()
-                .flatMap(List::stream)
+        return java.util.Arrays.stream(getAllKeyBindings())
                 .map(binding -> Text.translatable(binding.getCategory()).getString())
                 .filter(category ->
                         category.equals("Movement")
@@ -452,8 +467,7 @@ public final class OverlayRenderer {
     }
 
     private static List<String> getMods(Map<Integer, List<KeyBinding>> bindingsByKey) {
-        return bindingsByKey.values().stream()
-                .flatMap(List::stream)
+        return java.util.Arrays.stream(getAllKeyBindings())
                 .map(binding -> Text.translatable(binding.getCategory()).getString())
                 .filter(category ->
                         !category.equals("Movement")
@@ -470,17 +484,65 @@ public final class OverlayRenderer {
     }
 
     private static List<KeyBinding> getBindingsForCategory(
-            Map<Integer, List<KeyBinding>> bindingsByKey,
+            KeyBinding[] allKeys,
             String categoryName
     ) {
-        return bindingsByKey.values().stream()
-                .flatMap(List::stream)
+        return java.util.Arrays.stream(allKeys)
                 .filter(binding -> Text.translatable(binding.getCategory()).getString().equals(categoryName))
                 .distinct()
                 .sorted(java.util.Comparator.comparing(binding ->
                         Text.translatable(binding.getTranslationKey()).getString()
                 ))
                 .toList();
+    }
+
+    private static KeyBinding[] getAllKeyBindings() {
+        return MinecraftClient.getInstance().options.allKeys;
+    }
+
+    private static String getBindingDisplayName(KeyBinding binding) {
+        InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
+
+        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
+            return "Unbound";
+        }
+
+        return key.getLocalizedText().getString();
+    }
+
+    private static int getActionStatusColor(KeyBinding binding) {
+        int keyCode = getKeyCodeForBinding(binding);
+
+        if (keyCode == GLFW.GLFW_KEY_UNKNOWN) {
+            return ACTION_UNBOUND_COLOR;
+        }
+
+        int conflictCount = 0;
+
+        for (KeyBinding otherBinding : getAllKeyBindings()) {
+            if (getKeyCodeForBinding(otherBinding) == keyCode) {
+                conflictCount++;
+            }
+        }
+
+        if (conflictCount > 1) {
+            return ACTION_CONFLICT_COLOR;
+        }
+
+        return ACTION_BOUND_COLOR;
+    }
+
+    private static int getKeyCodeForBinding(KeyBinding binding) {
+        InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
+
+        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
+            return GLFW.GLFW_KEY_UNKNOWN;
+        }
+
+        return switch (key.getCategory()) {
+            case MOUSE -> -100 + key.getCode();
+            default -> key.getCode();
+        };
     }
 
     private static Map<Integer, List<KeyBinding>> groupKeybinds(KeyBinding[] allKeys) {
@@ -667,6 +729,23 @@ public final class OverlayRenderer {
         }
 
         return result.isEmpty() ? "?" : result.toString();
+    }
+
+    private static String truncateToWidth(TextRenderer textRenderer, String text, int maxWidth) {
+        if (textRenderer.getWidth(text) <= maxWidth) {
+            return text;
+        }
+
+        String ellipsis = "...";
+        int ellipsisWidth = textRenderer.getWidth(ellipsis);
+
+        String result = text;
+
+        while (!result.isEmpty() && textRenderer.getWidth(result) + ellipsisWidth > maxWidth) {
+            result = result.substring(0, result.length() - 1);
+        }
+
+        return result + ellipsis;
     }
 
     private static void drawScaledCenteredText(
@@ -857,7 +936,7 @@ public final class OverlayRenderer {
             buttonX += width + 6;
         }
 
-        int drawerButtonX = buttonX + 12;
+        int drawerButtonX = buttonX;
         String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
         int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
 
@@ -1026,7 +1105,7 @@ public final class OverlayRenderer {
             itemY += DRAWER_LINE_HEIGHT;
 
             if (expandedMods.contains(modName)) {
-                itemY += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                itemY += getBindingsForCategory(getAllKeyBindings(), modName).size() * DRAWER_LINE_HEIGHT;
                 itemY += 4;
             }
         }
@@ -1082,7 +1161,7 @@ public final class OverlayRenderer {
             itemY += DRAWER_LINE_HEIGHT;
 
             if (expandedMods.contains(modName)) {
-                for (KeyBinding binding : getBindingsForCategory(bindingsByKey, modName)) {
+                for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), modName)) {
                     String actionName = Text.translatable(binding.getTranslationKey()).getString();
 
                     int actionX = itemX + 12;
@@ -1176,7 +1255,7 @@ public final class OverlayRenderer {
             itemY += DRAWER_LINE_HEIGHT;
 
             if (expandedMods.contains(modName)) {
-                itemY += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                itemY += getBindingsForCategory(getAllKeyBindings(), modName).size() * DRAWER_LINE_HEIGHT;
                 itemY += 4;
             }
         }
@@ -1229,7 +1308,7 @@ public final class OverlayRenderer {
         if (modsExpanded) {
             for (String modName : getMods(bindingsByKey)) {
                 contentHeight += DRAWER_LINE_HEIGHT; // mod header
-                contentHeight += getBindingsForCategory(bindingsByKey, modName).size() * DRAWER_LINE_HEIGHT;
+                contentHeight += getBindingsForCategory(getAllKeyBindings(), modName).size() * DRAWER_LINE_HEIGHT;
                 contentHeight += 4; // gap after each mod
             }
         }
@@ -1342,6 +1421,33 @@ public final class OverlayRenderer {
             case "Keyboard" -> "keyboard";
             default -> "";
         };
+    }
+
+    private static String displaySearchQuery(String searchQuery) {
+        if (searchQuery == null || searchQuery.isBlank()) {
+            return "Search...";
+        }
+
+        if (searchQuery.startsWith("category:")) {
+            return searchQuery.substring("category:".length());
+        }
+
+        if (searchQuery.startsWith("mod:")) {
+            return searchQuery.substring("mod:".length());
+        }
+
+        if (searchQuery.startsWith("action:")) {
+            String exact = searchQuery.substring("action:".length());
+            int separator = exact.indexOf('|');
+
+            if (separator > 0) {
+                return exact.substring(0, separator) + " → " + exact.substring(separator + 1);
+            }
+
+            return exact;
+        }
+
+        return searchQuery + "_";
     }
 
     private static LayoutInfo getLayoutInfo() {
