@@ -1291,6 +1291,26 @@ public final class OverlayRenderer {
         return null;
     }
 
+    public static InputUtil.Key getVisualKeyAt(int mouseX, int mouseY) {
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+            if (isMouseOverKey(key, local.x(), local.y())) {
+                int keyCode = key.keyCode();
+
+                if (keyCode < 0) {
+                    int mouseButton = keyCode + 100;
+                    return InputUtil.Type.MOUSE.createFromCode(mouseButton);
+                }
+
+                return InputUtil.fromKeyCode(keyCode, 0);
+            }
+        }
+
+        return null;
+    }
+
     public static String getDrawerModArrowAt(
             int mouseX,
             int mouseY,

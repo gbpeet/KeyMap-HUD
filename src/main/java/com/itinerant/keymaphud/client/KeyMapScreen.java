@@ -59,6 +59,11 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
+        if (bindingMode && bindingTarget != null) {
+            assignBinding(net.minecraft.client.util.InputUtil.fromKeyCode(keyCode, scanCode));
+            return true;
+        }
+
         if (filterDrawerOpen && keyCode == 264) { // Down arrow
             drawerScroll = Math.min(
                     drawerScroll + 12,
@@ -118,6 +123,18 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (bindingMode && bindingTarget != null) {
+            net.minecraft.client.util.InputUtil.Key clickedKey =
+                    OverlayRenderer.getVisualKeyAt((int) mouseX, (int) mouseY);
+
+            if (clickedKey != null) {
+                assignBinding(clickedKey);
+                return true;
+            }
+
+            return true;
+        }
+
         if (OverlayRenderer.isFilterDrawerButtonAt((int) mouseX, (int) mouseY, filterDrawerOpen)) {
             filterDrawerOpen = !filterDrawerOpen;
             return true;
@@ -256,5 +273,17 @@ public class KeyMapScreen extends Screen {
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void assignBinding(net.minecraft.client.util.InputUtil.Key key) {
+        if (bindingTarget == null) {
+            return;
+        }
+
+        bindingTarget.setBoundKey(key);
+        net.minecraft.client.option.KeyBinding.updateKeysByCode();
+
+        bindingMode = false;
+        bindingTarget = null;
     }
 }
