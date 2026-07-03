@@ -174,10 +174,32 @@ public final class OverlayRenderer {
             int promptX = searchX + searchWidth + 12;
             int promptY = searchY + 4;
 
+            int x = promptX;
+
             context.drawTextWithShadow(
                     textRenderer,
-                    Text.literal("Select a key for: " + actionName + "   ESC = Cancel"),
-                    promptX,
+                    Text.literal("Select a key for: "),
+                    x,
+                    promptY,
+                    0xFFFFFFFF
+            );
+
+            x += textRenderer.getWidth("Select a key for: ");
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal(actionName),
+                    x,
+                    promptY,
+                    0xFFFFCC55
+            );
+
+            x += textRenderer.getWidth(actionName);
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("   ESC = Unbind   Right-click = Cancel"),
+                    x,
                     promptY,
                     0xFFFF6666
             );

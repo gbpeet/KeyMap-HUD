@@ -124,6 +124,12 @@ public class KeyMapScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (bindingMode && bindingTarget != null) {
+            if (button == 1) {   // Right mouse button
+                bindingMode = false;
+                bindingTarget = null;
+                return true;
+            }
+
             net.minecraft.client.util.InputUtil.Key clickedKey =
                     OverlayRenderer.getVisualKeyAt((int) mouseX, (int) mouseY);
 
