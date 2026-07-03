@@ -10,8 +10,8 @@ public class KeyMapScreen extends Screen {
     private int drawerScroll = 0;
 
     private boolean filterDrawerOpen = false;
-    private boolean quickExpanded = true;
-    private boolean categoriesExpanded = true;
+    private boolean quickExpanded = false;
+    private boolean categoriesExpanded = false;
     private boolean modsExpanded = false;
     private final java.util.Set<String> expandedMods = new java.util.HashSet<>();
 
@@ -50,12 +50,6 @@ public class KeyMapScreen extends Screen {
         if (KeyBindings.matchesOverlayKey(keyCode, scanCode)) {
             KeyMapHUDClient.waitingForRelease = true;
             close();
-            return true;
-        }
-
-        if (bindingMode && keyCode == 256) { // ESC
-            bindingMode = false;
-            bindingTarget = null;
             return true;
         }
 
@@ -286,8 +280,18 @@ public class KeyMapScreen extends Screen {
             return;
         }
 
-        bindingTarget.setBoundKey(key);
+        // ESC unbinds, matching vanilla Controls behavior
+        if (key.getCode() == 256) {
+            bindingTarget.setBoundKey(net.minecraft.client.util.InputUtil.UNKNOWN_KEY);
+        } else {
+            bindingTarget.setBoundKey(key);
+        }
+
         net.minecraft.client.option.KeyBinding.updateKeysByCode();
+
+        if (this.client != null) {
+            this.client.options.write();
+        }
 
         bindingMode = false;
         bindingTarget = null;

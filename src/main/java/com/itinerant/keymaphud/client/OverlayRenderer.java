@@ -634,24 +634,10 @@ public final class OverlayRenderer {
         context.fill(x, y, x + key.width(), y + key.height(), color);
         context.drawBorder(x, y, key.width(), key.height(), matchesSearch ? BORDER_COLOR : 0x66FFFFFF);
 
-        int labelY = count == 0 ? y + 7 : y + 2;
+        int labelY = y + 7;
         int labelX = x + (key.width() - textRenderer.getWidth(key.label())) / 2;
 
         context.drawTextWithShadow(textRenderer, Text.literal(key.label()), labelX, labelY, textColor);
-
-        if (count > 0) {
-            String miniLabel = count > 1 ? count + "x" : makeMiniLabel(bindings.get(0));
-
-            drawScaledCenteredText(
-                    context,
-                    textRenderer,
-                    miniLabel,
-                    x + key.width() / 2,
-                    y + 13,
-                    0.65f,
-                    textColor
-            );
-        }
     }
 
     private static boolean matchesSearch(KeyVisual key, List<KeyBinding> bindings, String searchQuery) {
