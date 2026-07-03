@@ -162,7 +162,7 @@ public final class OverlayRenderer {
 
         context.drawTextWithShadow(
                 textRenderer,
-                Text.literal(displaySearchQuery(searchQuery)),
+                Text.literal(displaySearchQuery(searchQuery, bindingMode)),
                 searchX + 6,
                 searchY + 4,
                 0xFFAAAAAA
@@ -1549,9 +1549,9 @@ public final class OverlayRenderer {
         };
     }
 
-    private static String displaySearchQuery(String searchQuery) {
+    private static String displaySearchQuery(String searchQuery, boolean bindingMode) {
         if (searchQuery == null || searchQuery.isBlank()) {
-            return "Search...";
+            return bindingMode ? "Search..." : "Search...";
         }
 
         if (searchQuery.startsWith("category:")) {
@@ -1573,7 +1573,8 @@ public final class OverlayRenderer {
             return exact;
         }
 
-        return searchQuery + "_";
+        boolean showCursor = !bindingMode && (System.currentTimeMillis() / 500) % 2 == 0;
+        return searchQuery + (showCursor ? "_" : "");
     }
 
     private static LayoutInfo getLayoutInfo() {
