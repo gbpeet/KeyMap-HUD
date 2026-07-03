@@ -84,6 +84,7 @@ public final class OverlayRenderer {
         int localMouseY = (int) ((mouseY - layout.originY()) / layout.scale());
 
         KeyVisual hoveredKey = null;
+        boolean bindingLabelHovered = false;
 
         context.getMatrices().push();
         context.getMatrices().translate(layout.originX(), layout.originY(), 0);
@@ -98,7 +99,27 @@ public final class OverlayRenderer {
         drawStatsBar(context, textRenderer, bindingsByKey);
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
+            boolean isHoveredForBinding = bindingMode && isMouseOverKey(key, localMouseX, localMouseY);
+
             drawKey(context, textRenderer, bindingsByKey, key, searchQuery);
+
+            if (isHoveredForBinding) {
+                context.drawBorder(
+                        key.x() - 2,
+                        key.y() - 2,
+                        key.width() + 4,
+                        key.height() + 4,
+                        0xFFFFFFFF
+                );
+
+                context.drawBorder(
+                        key.x() - 3,
+                        key.y() - 3,
+                        key.width() + 6,
+                        key.height() + 6,
+                        0xFFFFCC55
+                );
+            }
 
             if (isMouseOverKey(key, localMouseX, localMouseY)
                     && !(filterDrawerOpen && isLocalMouseInsideDrawer(localMouseX, localMouseY))) {
@@ -107,6 +128,30 @@ public final class OverlayRenderer {
         }
 
         if (filterDrawerOpen && !bindingMode) {
+            KeyBinding hoveredCategoryBinding = getDrawerCategoryActionBindingClickAt(
+                    mouseX,
+                    mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    expandedCategories
+            );
+
+            KeyBinding hoveredModBinding = getDrawerActionBindingClickAt(
+                    mouseX,
+                    mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    modsExpanded,
+                    expandedCategories,
+                    expandedMods
+            );
+
+            bindingLabelHovered =
+                    hoveredCategoryBinding != null
+                            || hoveredModBinding != null;
+
             drawFilterDrawer(
                     context,
                     textRenderer,
@@ -128,6 +173,16 @@ public final class OverlayRenderer {
 
         if (hoveredKey != null) {
             drawTooltip(context, textRenderer, bindingsByKey, hoveredKey, mouseX, mouseY);
+        }
+
+        if (bindingLabelHovered) {
+            drawSimpleTooltip(
+                    context,
+                    textRenderer,
+                    "Click to assign a key",
+                    mouseX,
+                    mouseY
+            );
         }
     }
 
@@ -838,6 +893,74 @@ public final class OverlayRenderer {
             int color = i == 0 ? 0xFFFFFF : 0xDDDDDD;
             context.drawTextWithShadow(textRenderer, lines.get(i), x + padding, y + padding + i * lineHeight, color);
         }
+
+        context.getMatrices().pop();
+    }
+
+    private static void drawSimpleTooltip(
+            DrawContext context,
+            TextRenderer textRenderer,
+            String message,
+            int mouseX,
+            int mouseY
+    ) {
+        int padding = 6;
+        int width = textRenderer.getWidth(message);
+        int tooltipWidth = width + padding * 2;
+        int tooltipHeight = 10 + padding * 2;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+
+        int x = mouseX + 12;
+        int y = mouseY + 12;
+
+        if (x + tooltipWidth > screenWidth - 4) {
+            x = mouseX - tooltipWidth - 12;
+        }
+
+        if (y + tooltipHeight > screenHeight - 4) {
+            y = mouseY - tooltipHeight - 12;
+        }
+
+        x = Math.max(4, x);
+        y = Math.max(4, y);
+
+        context.getMatrices().push();
+        context.getMatrices().translate(0, 0, 500);
+
+        context.fill(
+                x - 1,
+                y - 1,
+                x + tooltipWidth + 1,
+                y + tooltipHeight + 1,
+                0xFF000000
+        );
+
+        context.fill(
+                x,
+                y,
+                x + tooltipWidth,
+                y + tooltipHeight,
+                0xFF202020
+        );
+
+        context.drawBorder(
+                x,
+                y,
+                tooltipWidth,
+                tooltipHeight,
+                0xFFFFFFFF
+        );
+
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal(message),
+                x + padding,
+                y + padding,
+                0xFFDDDDDD
+        );
 
         context.getMatrices().pop();
     }
