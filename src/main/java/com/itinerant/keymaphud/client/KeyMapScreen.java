@@ -13,6 +13,7 @@ public class KeyMapScreen extends Screen {
     private boolean quickExpanded = false;
     private boolean categoriesExpanded = false;
     private boolean modsExpanded = false;
+    private final java.util.Set<String> expandedCategories = new java.util.HashSet<>();
     private final java.util.Set<String> expandedMods = new java.util.HashSet<>();
 
     private boolean bindingMode = false;
@@ -61,7 +62,13 @@ public class KeyMapScreen extends Screen {
         if (filterDrawerOpen && keyCode == 264) { // Down arrow
             drawerScroll = Math.min(
                     drawerScroll + 12,
-                    OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                    OverlayRenderer.getMaxDrawerScroll(
+                            quickExpanded,
+                            categoriesExpanded,
+                            modsExpanded,
+                            expandedCategories,
+                            expandedMods
+                    )
             );
             return true;
         }
@@ -92,6 +99,7 @@ public class KeyMapScreen extends Screen {
                 quickExpanded,
                 categoriesExpanded,
                 modsExpanded,
+                expandedCategories,
                 expandedMods,
                 bindingMode,
                 bindingTarget
@@ -106,7 +114,13 @@ public class KeyMapScreen extends Screen {
                     0,
                     Math.min(
                             drawerScroll,
-                            OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                            OverlayRenderer.getMaxDrawerScroll(
+                            quickExpanded,
+                            categoriesExpanded,
+                            modsExpanded,
+                            expandedCategories,
+                            expandedMods
+                    )
                     )
             );
             return true;
@@ -146,7 +160,8 @@ public class KeyMapScreen extends Screen {
                     (int) mouseY,
                     drawerScroll,
                     quickExpanded,
-                    categoriesExpanded
+                    categoriesExpanded,
+                    expandedCategories
             );
 
             if (section != null) {
@@ -158,7 +173,13 @@ public class KeyMapScreen extends Screen {
 
                 drawerScroll = Math.min(
                         drawerScroll,
-                        OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                        OverlayRenderer.getMaxDrawerScroll(
+                            quickExpanded,
+                            categoriesExpanded,
+                            modsExpanded,
+                            expandedCategories,
+                            expandedMods
+                    )
                 );
                 return true;
             }
@@ -175,16 +196,80 @@ public class KeyMapScreen extends Screen {
                 return true;
             }
 
+            String categoryArrow = OverlayRenderer.getDrawerCategoryArrowAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    expandedCategories
+            );
+
+            if (categoryArrow != null) {
+                if (expandedCategories.contains(categoryArrow)) {
+                    expandedCategories.remove(categoryArrow);
+                } else {
+                    expandedCategories.add(categoryArrow);
+                }
+
+                drawerScroll = Math.min(
+                        drawerScroll,
+                        OverlayRenderer.getMaxDrawerScroll(
+                                quickExpanded,
+                                categoriesExpanded,
+                                modsExpanded,
+                                expandedCategories,
+                                expandedMods
+                        )
+                );
+                return true;
+            }
+
             String categoryFilter = OverlayRenderer.getDrawerCategoryQueryAt(
                     (int) mouseX,
                     (int) mouseY,
                     drawerScroll,
                     quickExpanded,
-                    categoriesExpanded
+                    categoriesExpanded,
+                    expandedCategories
             );
 
             if (categoryFilter != null) {
                 searchQuery = categoryFilter;
+                return true;
+            }
+
+            net.minecraft.client.option.KeyBinding categoryRebindTarget =
+                    OverlayRenderer.getDrawerCategoryActionBindingClickAt(
+                            (int) mouseX,
+                            (int) mouseY,
+                            drawerScroll,
+                            quickExpanded,
+                            categoriesExpanded,
+                            expandedCategories
+                    );
+
+            if (categoryRebindTarget != null) {
+                bindingMode = true;
+                bindingTarget = categoryRebindTarget;
+
+                String category = Text.translatable(categoryRebindTarget.getCategory()).getString();
+                String action = Text.translatable(categoryRebindTarget.getTranslationKey()).getString();
+                searchQuery = "action:" + category + "|" + action;
+                return true;
+            }
+
+            String categoryActionFilter = OverlayRenderer.getDrawerCategoryActionQueryAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    expandedCategories
+            );
+
+            if (categoryActionFilter != null) {
+                searchQuery = categoryActionFilter;
                 return true;
             }
 
@@ -195,6 +280,7 @@ public class KeyMapScreen extends Screen {
                     quickExpanded,
                     categoriesExpanded,
                     modsExpanded,
+                    expandedCategories,
                     expandedMods
             );
 
@@ -207,7 +293,13 @@ public class KeyMapScreen extends Screen {
 
                 drawerScroll = Math.min(
                         drawerScroll,
-                        OverlayRenderer.getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded)
+                        OverlayRenderer.getMaxDrawerScroll(
+                            quickExpanded,
+                            categoriesExpanded,
+                            modsExpanded,
+                            expandedCategories,
+                            expandedMods
+                    )
                 );
 
                 return true;
@@ -220,6 +312,7 @@ public class KeyMapScreen extends Screen {
                     quickExpanded,
                     categoriesExpanded,
                     modsExpanded,
+                    expandedCategories,
                     expandedMods
             );
 
@@ -235,6 +328,7 @@ public class KeyMapScreen extends Screen {
                     quickExpanded,
                     categoriesExpanded,
                     modsExpanded,
+                    expandedCategories,
                     expandedMods
             );
 
@@ -256,6 +350,7 @@ public class KeyMapScreen extends Screen {
                     quickExpanded,
                     categoriesExpanded,
                     modsExpanded,
+                    expandedCategories,
                     expandedMods
             );
 

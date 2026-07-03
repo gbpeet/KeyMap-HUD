@@ -32,7 +32,7 @@ public final class OverlayRenderer {
     private static final int DRAWER_PADDING = 14;
     private static final int DRAWER_LINE_HEIGHT = 12;
     private static final int DRAWER_HEADER_Y_OFFSET = 12;
-    private static final int DRAWER_CONTENT_Y_OFFSET = 32;
+    private static final int DRAWER_CONTENT_Y_OFFSET = 44;
 
     private static final int DRAWER_HOVER_COLOR = 0x553A3A3A;
     private static final int DRAWER_SELECTED_COLOR = 0x885577AA;
@@ -64,6 +64,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods,
             boolean bindingMode,
             KeyBinding bindingTarget
@@ -118,6 +119,7 @@ public final class OverlayRenderer {
                     quickExpanded,
                     categoriesExpanded,
                     modsExpanded,
+                    expandedCategories,
                     expandedMods
             );
         }
@@ -267,6 +269,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods
     ) {
         int drawerY = LAYOUT_TOP + 8;
@@ -290,8 +293,16 @@ public final class OverlayRenderer {
                 TEXT_COLOR
         );
 
+        context.drawTextWithShadow(
+                textRenderer,
+                Text.literal("Click key labels to rebind"),
+                DRAWER_X + DRAWER_PADDING,
+                drawerY + DRAWER_HEADER_Y_OFFSET + 11,
+                0xFF888888
+        );
+
         int scissorX1 = (int) (layout.originX() + DRAWER_X * layout.scale());
-        int scissorY1 = (int) (layout.originY() + (drawerY + 28) * layout.scale());
+        int scissorY1 = (int) (layout.originY() + (drawerY + 40) * layout.scale());
         int scissorX2 = (int) (layout.originX() + (DRAWER_X + DRAWER_WIDTH) * layout.scale());
         int scissorY2 = (int) (layout.originY() + (drawerY + drawerHeight) * layout.scale());
 
@@ -300,132 +311,96 @@ public final class OverlayRenderer {
         int itemX = DRAWER_X + DRAWER_PADDING;
         int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
 
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal((quickExpanded ? "▼ " : "▶ ") + "Quick"),
-                itemX,
-                itemY,
-                0xFFAAAAAA
-        );
+        context.drawTextWithShadow(textRenderer, Text.literal((quickExpanded ? "▼ " : "▶ ") + "Quick"), itemX, itemY, 0xFFAAAAAA);
         itemY += 14;
 
         if (quickExpanded) {
             for (String filter : QUICK_FILTERS) {
                 String filterQuery = queryForFilter(filter);
-
                 boolean selected = searchQuery.equals(filterQuery);
+                boolean hovered = localMouseX >= itemX
+                        && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                        && localMouseY >= itemY - 2
+                        && localMouseY <= itemY + 10;
 
-                boolean hovered =
-                        localMouseX >= itemX
-                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
-                                && localMouseY >= itemY - 2
-                                && localMouseY <= itemY + 10;
-
-                drawDrawerRowBackground(
-                        context,
-                        itemX,
-                        itemY,
-                        160,
-                        hovered,
-                        selected
-                );
-
-                context.drawTextWithShadow(
-                        textRenderer,
-                        Text.literal("• " + filter),
-                        itemX,
-                        itemY,
-                        TEXT_COLOR
-                );
-
+                drawDrawerRowBackground(context, itemX, itemY, 160, hovered, selected);
+                context.drawTextWithShadow(textRenderer, Text.literal("• " + filter), itemX, itemY, TEXT_COLOR);
                 itemY += DRAWER_LINE_HEIGHT;
             }
             itemY += 10;
         }
 
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal((categoriesExpanded ? "▼ " : "▶ ") + "Categories"),
-                itemX,
-                itemY,
-                0xFFAAAAAA
-        );
+        context.drawTextWithShadow(textRenderer, Text.literal((categoriesExpanded ? "▼ " : "▶ ") + "Categories"), itemX, itemY, 0xFFAAAAAA);
         itemY += 14;
 
         if (categoriesExpanded) {
             for (String category : getCategories(bindingsByKey)) {
-                String categoryQuery = "category:" + category;
+                boolean categoryExpanded = expandedCategories.contains(category);
+                boolean selected = searchQuery.equals("category:" + category);
+                boolean hovered = localMouseX >= itemX
+                        && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                        && localMouseY >= itemY - 2
+                        && localMouseY <= itemY + 10;
 
-                boolean selected = searchQuery.equals(categoryQuery);
-
-                boolean hovered =
-                        localMouseX >= itemX
-                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
-                                && localMouseY >= itemY - 2
-                                && localMouseY <= itemY + 10;
-
-                drawDrawerRowBackground(
-                        context,
-                        itemX,
-                        itemY,
-                        160,
-                        hovered,
-                        selected
-                );
-
+                drawDrawerRowBackground(context, itemX, itemY, 160, hovered, selected);
                 context.drawTextWithShadow(
                         textRenderer,
-                        Text.literal("• " + category),
+                        Text.literal((categoryExpanded ? "▼ " : "▶ ") + category),
                         itemX,
                         itemY,
                         TEXT_COLOR
                 );
-
                 itemY += DRAWER_LINE_HEIGHT;
-            }
 
+                if (categoryExpanded) {
+                    for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), category)) {
+                        String actionName = Text.translatable(binding.getTranslationKey()).getString();
+                        String actionQuery = "action:" + category + "|" + actionName;
+                        String bindingLabel = getBindingDisplayName(binding);
+                        int actionColor = getActionStatusColor(binding);
+                        boolean actionSelected = searchQuery.equals(actionQuery);
+                        boolean actionHovered = localMouseX >= itemX + 12
+                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                && localMouseY >= itemY - 2
+                                && localMouseY <= itemY + 10;
+
+                        drawDrawerRowBackground(
+                                context, itemX + 12, itemY,
+                                DRAWER_WIDTH - DRAWER_PADDING - 24,
+                                actionHovered, actionSelected
+                        );
+
+                        int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+                        int actionMaxWidth = Math.max(30, bindingLabelX - itemX - 18);
+
+                        context.drawTextWithShadow(
+                                textRenderer,
+                                Text.literal("  • " + truncateToWidth(textRenderer, actionName, actionMaxWidth)),
+                                itemX, itemY, actionColor
+                        );
+                        context.drawTextWithShadow(textRenderer, Text.literal(bindingLabel), bindingLabelX, itemY, actionColor);
+                        itemY += DRAWER_LINE_HEIGHT;
+                    }
+                    itemY += 4;
+                }
+            }
             itemY += 10;
         }
 
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal((modsExpanded ? "▼ " : "▶ ") + "Mods"),
-                itemX,
-                itemY,
-                0xFFAAAAAA
-        );
+        context.drawTextWithShadow(textRenderer, Text.literal((modsExpanded ? "▼ " : "▶ ") + "Mods"), itemX, itemY, 0xFFAAAAAA);
         itemY += 14;
 
         if (modsExpanded) {
             for (String modName : getMods(bindingsByKey)) {
                 boolean modExpanded = expandedMods.contains(modName);
+                boolean selected = searchQuery.equals("mod:" + modName);
+                boolean hovered = localMouseX >= itemX
+                        && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                        && localMouseY >= itemY - 2
+                        && localMouseY <= itemY + 10;
 
-                boolean selected =
-                        searchQuery.equals("mod:" + modName);
-
-                boolean hovered =
-                        localMouseX >= itemX
-                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
-                                && localMouseY >= itemY - 2
-                                && localMouseY <= itemY + 10;
-
-                drawDrawerRowBackground(
-                        context,
-                        itemX,
-                        itemY,
-                        160,
-                        hovered,
-                        selected
-                );
-
-                context.drawTextWithShadow(
-                        textRenderer,
-                        Text.literal((modExpanded ? "▼ " : "▶ ") + modName),
-                        itemX,
-                        itemY,
-                        TEXT_COLOR
-                );
-
+                drawDrawerRowBackground(context, itemX, itemY, 160, hovered, selected);
+                context.drawTextWithShadow(textRenderer, Text.literal((modExpanded ? "▼ " : "▶ ") + modName), itemX, itemY, TEXT_COLOR);
                 itemY += DRAWER_LINE_HEIGHT;
 
                 if (modExpanded) {
@@ -434,63 +409,44 @@ public final class OverlayRenderer {
                         String actionQuery = "action:" + modName + "|" + actionName;
                         String bindingLabel = getBindingDisplayName(binding);
                         int actionColor = getActionStatusColor(binding);
-
                         boolean actionSelected = searchQuery.equals(actionQuery);
-
-                        boolean actionHovered =
-                                localMouseX >= itemX + 12
-                                        && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
-                                        && localMouseY >= itemY - 2
-                                        && localMouseY <= itemY + 10;
+                        boolean actionHovered = localMouseX >= itemX + 12
+                                && localMouseX <= DRAWER_X + DRAWER_WIDTH - 10
+                                && localMouseY >= itemY - 2
+                                && localMouseY <= itemY + 10;
 
                         drawDrawerRowBackground(
-                                context,
-                                itemX + 12,
-                                itemY,
+                                context, itemX + 12, itemY,
                                 DRAWER_WIDTH - DRAWER_PADDING - 24,
-                                actionHovered,
-                                actionSelected
-                        );
-
-                        context.drawTextWithShadow(
-                                textRenderer,
-                                Text.literal("  • " + truncateToWidth(textRenderer, actionName, 205)),
-                                itemX,
-                                itemY,
-                                actionColor
+                                actionHovered, actionSelected
                         );
 
                         int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+                        int actionMaxWidth = Math.max(30, bindingLabelX - itemX - 18);
 
                         context.drawTextWithShadow(
                                 textRenderer,
-                                Text.literal(bindingLabel),
-                                bindingLabelX,
-                                itemY,
-                                actionColor
+                                Text.literal("  • " + truncateToWidth(textRenderer, actionName, actionMaxWidth)),
+                                itemX, itemY, actionColor
                         );
-
+                        context.drawTextWithShadow(textRenderer, Text.literal(bindingLabel), bindingLabelX, itemY, actionColor);
                         itemY += DRAWER_LINE_HEIGHT;
                     }
-
                     itemY += 4;
                 }
             }
         }
 
         drawDrawerScrollbar(
-                context,
-                drawerY,
-                drawerHeight,
-                drawerScroll,
-                quickExpanded,
-                categoriesExpanded,
-                modsExpanded
+                context, drawerY, drawerHeight, drawerScroll,
+                quickExpanded, categoriesExpanded, modsExpanded,
+                expandedCategories, expandedMods
         );
 
         context.disableScissor();
         context.getMatrices().pop();
     }
+
 
     private static List<String> getCategories(Map<Integer, List<KeyBinding>> bindingsByKey) {
         return java.util.Arrays.stream(getAllKeyBindings())
@@ -1018,52 +974,179 @@ public final class OverlayRenderer {
             int mouseY,
             int drawerScroll,
             boolean quickExpanded,
-            boolean categoriesExpanded
+            boolean categoriesExpanded,
+            java.util.Set<String> expandedCategories
     ) {
-        if (!categoriesExpanded) {
-            return null;
-        }
+        if (!categoriesExpanded) return null;
 
         MinecraftClient client = MinecraftClient.getInstance();
-
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
-
         Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
-        List<String> categories = getCategories(bindingsByKey);
 
         int drawerY = LAYOUT_TOP + 8;
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
-
         int itemX = DRAWER_X + DRAWER_PADDING;
-        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
-
-        itemY += 14;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll + 14;
 
         if (quickExpanded) {
-            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
-            itemY += 10;
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
         }
+        itemY += 14;
 
+        for (String category : getCategories(bindingsByKey)) {
+            boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
+            boolean onRow = local.y() >= itemY - 2 && local.y() <= itemY + 10;
+            boolean onName = local.x() >= itemX + 12 && local.x() <= DRAWER_X + DRAWER_WIDTH - 10;
+
+            if (visible && onRow && onName) return "category:" + category;
+
+            itemY += DRAWER_LINE_HEIGHT;
+            if (expandedCategories.contains(category)) {
+                itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT + 4;
+            }
+        }
+        return null;
+    }
+
+
+    public static String getDrawerCategoryArrowAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            java.util.Set<String> expandedCategories
+    ) {
+        if (!categoriesExpanded) return null;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll + 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
+        }
+        itemY += 14;
+
+        for (String category : getCategories(bindingsByKey)) {
+            boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
+            boolean onRow = local.y() >= itemY - 2 && local.y() <= itemY + 10;
+            boolean onArrow = local.x() >= itemX && local.x() <= itemX + 10;
+
+            if (visible && onRow && onArrow) return category;
+
+            itemY += DRAWER_LINE_HEIGHT;
+            if (expandedCategories.contains(category)) {
+                itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT + 4;
+            }
+        }
+        return null;
+    }
+
+    public static String getDrawerCategoryActionQueryAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            java.util.Set<String> expandedCategories
+    ) {
+        if (!categoriesExpanded) return null;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll + 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
+        }
         itemY += 14;
 
         TextRenderer textRenderer = client.textRenderer;
 
-        for (String category : categories) {
-            int width = Math.max(120, textRenderer.getWidth(category) + 18);
-
-            if (local.x() >= itemX
-                    && local.x() <= itemX + width
-                    && local.y() >= itemY - 2
-                    && local.y() <= itemY + 10
-                    && local.y() >= drawerY + 28
-                    && local.y() <= drawerY + drawerHeight) {
-                return "category:" + category;
-            }
-
+        for (String category : getCategories(bindingsByKey)) {
             itemY += DRAWER_LINE_HEIGHT;
-        }
 
+            if (expandedCategories.contains(category)) {
+                for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), category)) {
+                    String actionName = Text.translatable(binding.getTranslationKey()).getString();
+                    String bindingLabel = getBindingDisplayName(binding);
+                    int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+
+                    boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
+                    boolean onRow = local.y() >= itemY - 2 && local.y() <= itemY + 10;
+                    boolean onAction = local.x() >= itemX + 12 && local.x() < bindingLabelX - 6;
+
+                    if (visible && onRow && onAction) {
+                        return "action:" + category + "|" + actionName;
+                    }
+                    itemY += DRAWER_LINE_HEIGHT;
+                }
+                itemY += 4;
+            }
+        }
+        return null;
+    }
+
+    public static KeyBinding getDrawerCategoryActionBindingClickAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            java.util.Set<String> expandedCategories
+    ) {
+        if (!categoriesExpanded) return null;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll + 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
+        }
+        itemY += 14;
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String category : getCategories(bindingsByKey)) {
+            itemY += DRAWER_LINE_HEIGHT;
+
+            if (expandedCategories.contains(category)) {
+                for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), category)) {
+                    String bindingLabel = getBindingDisplayName(binding);
+                    int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+
+                    boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
+                    boolean onRow = local.y() >= itemY - 2 && local.y() <= itemY + 10;
+                    boolean onBinding = local.x() >= bindingLabelX - 6
+                            && local.x() <= DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING;
+
+                    if (visible && onRow && onBinding) return binding;
+                    itemY += DRAWER_LINE_HEIGHT;
+                }
+                itemY += 4;
+            }
+        }
         return null;
     }
 
@@ -1074,6 +1157,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods
     ) {
         if (!modsExpanded) {
@@ -1104,7 +1188,13 @@ public final class OverlayRenderer {
         itemY += 14;
 
         if (categoriesExpanded) {
-            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                itemY += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT;
+                    itemY += 4;
+                }
+            }
             itemY += 10;
         }
 
@@ -1149,6 +1239,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods
     ) {
         if (!modsExpanded) {
@@ -1178,7 +1269,13 @@ public final class OverlayRenderer {
         itemY += 14;
 
         if (categoriesExpanded) {
-            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                itemY += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT;
+                    itemY += 4;
+                }
+            }
             itemY += 10;
         }
 
@@ -1229,6 +1326,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods
     ) {
         if (!modsExpanded) {
@@ -1257,7 +1355,13 @@ public final class OverlayRenderer {
         itemY += 14;
 
         if (categoriesExpanded) {
-            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                itemY += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT;
+                    itemY += 4;
+                }
+            }
             itemY += 10;
         }
 
@@ -1326,6 +1430,7 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods
     ) {
         if (!modsExpanded) {
@@ -1355,7 +1460,13 @@ public final class OverlayRenderer {
         itemY += 14;
 
         if (categoriesExpanded) {
-            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                itemY += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT;
+                    itemY += 4;
+                }
+            }
             itemY += 10;
         }
 
@@ -1405,27 +1516,30 @@ public final class OverlayRenderer {
     public static int getMaxDrawerScroll(
             boolean quickExpanded,
             boolean categoriesExpanded,
-            boolean modsExpanded
+            boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
+            java.util.Set<String> expandedMods
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
         Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
 
         int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
-        int visibleContentHeight = drawerHeight - 32;
-
-        int contentHeight = 0;
-
-        contentHeight += 14;
+        int visibleContentHeight = drawerHeight - 44;
+        int contentHeight = 14;
 
         if (quickExpanded) {
-            contentHeight += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
-            contentHeight += 10;
+            contentHeight += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
         }
 
         contentHeight += 14;
 
         if (categoriesExpanded) {
-            contentHeight += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                contentHeight += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    contentHeight += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT + 4;
+                }
+            }
             contentHeight += 10;
         }
 
@@ -1433,21 +1547,24 @@ public final class OverlayRenderer {
 
         if (modsExpanded) {
             for (String modName : getMods(bindingsByKey)) {
-                contentHeight += DRAWER_LINE_HEIGHT; // mod header
-                contentHeight += getBindingsForCategory(getAllKeyBindings(), modName).size() * DRAWER_LINE_HEIGHT;
-                contentHeight += 4; // gap after each mod
+                contentHeight += DRAWER_LINE_HEIGHT;
+                if (expandedMods.contains(modName)) {
+                    contentHeight += getBindingsForCategory(getAllKeyBindings(), modName).size() * DRAWER_LINE_HEIGHT + 4;
+                }
             }
         }
 
         return Math.max(0, contentHeight - visibleContentHeight);
     }
 
+
     public static String getDrawerSectionHeaderAt(
             int mouseX,
             int mouseY,
             int drawerScroll,
             boolean quickExpanded,
-            boolean categoriesExpanded
+            boolean categoriesExpanded,
+            java.util.Set<String> expandedCategories
     ) {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
@@ -1456,37 +1573,33 @@ public final class OverlayRenderer {
         int itemX = DRAWER_X + DRAWER_PADDING;
         int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
 
-        if (isInsideDrawerHeader(local, itemX, itemY)) {
-            return "quick";
-        }
+        if (isInsideDrawerHeader(local, itemX, itemY)) return "quick";
 
         itemY += 14;
-
         if (quickExpanded) {
-            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
-            itemY += 10;
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT + 10;
         }
 
-        if (isInsideDrawerHeader(local, itemX, itemY)) {
-            return "categories";
-        }
+        if (isInsideDrawerHeader(local, itemX, itemY)) return "categories";
 
         itemY += 14;
-
         if (categoriesExpanded) {
             MinecraftClient client = MinecraftClient.getInstance();
             Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
 
-            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            for (String category : getCategories(bindingsByKey)) {
+                itemY += DRAWER_LINE_HEIGHT;
+                if (expandedCategories.contains(category)) {
+                    itemY += getBindingsForCategory(getAllKeyBindings(), category).size() * DRAWER_LINE_HEIGHT + 4;
+                }
+            }
             itemY += 10;
         }
 
-        if (isInsideDrawerHeader(local, itemX, itemY)) {
-            return "mods";
-        }
-
+        if (isInsideDrawerHeader(local, itemX, itemY)) return "mods";
         return null;
     }
+
 
     private static void drawDrawerScrollbar(
             DrawContext context,
@@ -1495,17 +1608,20 @@ public final class OverlayRenderer {
             int drawerScroll,
             boolean quickExpanded,
             boolean categoriesExpanded,
-            boolean modsExpanded
+            boolean modsExpanded,
+            java.util.Set<String> expandedCategories,
+            java.util.Set<String> expandedMods
     ) {
-        int maxScroll = getMaxDrawerScroll(quickExpanded, categoriesExpanded, modsExpanded);
+        int maxScroll = getMaxDrawerScroll(
+                quickExpanded, categoriesExpanded, modsExpanded,
+                expandedCategories, expandedMods
+        );
 
-        if (maxScroll <= 0) {
-            return;
-        }
+        if (maxScroll <= 0) return;
 
         int trackX = DRAWER_X + DRAWER_WIDTH - 6;
-        int trackY = drawerY + 28;
-        int trackHeight = drawerHeight - 34;
+        int trackY = drawerY + 40;
+        int trackHeight = drawerHeight - 46;
 
         context.fill(trackX, trackY, trackX + 3, trackY + trackHeight, 0xFF303030);
 
@@ -1514,6 +1630,7 @@ public final class OverlayRenderer {
 
         context.fill(trackX, thumbY, trackX + 3, thumbY + thumbHeight, 0xFFAAAAAA);
     }
+
 
     private static boolean isLocalMouseInsideDrawer(int localMouseX, int localMouseY) {
         int drawerY = LAYOUT_TOP + 8;
