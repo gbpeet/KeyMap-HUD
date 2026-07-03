@@ -64,7 +64,9 @@ public final class OverlayRenderer {
             boolean quickExpanded,
             boolean categoriesExpanded,
             boolean modsExpanded,
-            java.util.Set<String> expandedMods
+            java.util.Set<String> expandedMods,
+            boolean bindingMode,
+            KeyBinding bindingTarget
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -91,7 +93,7 @@ public final class OverlayRenderer {
 
         drawMouseClusterLabel(context, textRenderer);
         drawTitle(context, textRenderer);
-        drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen);
+        drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen, bindingMode, bindingTarget);
         drawStatsBar(context, textRenderer, bindingsByKey);
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
@@ -103,7 +105,7 @@ public final class OverlayRenderer {
             }
         }
 
-        if (filterDrawerOpen) {
+        if (filterDrawerOpen && !bindingMode) {
             drawFilterDrawer(
                     context,
                     textRenderer,
@@ -146,7 +148,9 @@ public final class OverlayRenderer {
             DrawContext context,
             TextRenderer textRenderer,
             String searchQuery,
-            boolean filterDrawerOpen
+            boolean filterDrawerOpen,
+            boolean bindingMode,
+            KeyBinding bindingTarget
     ) {
         int searchX = LAYOUT_LEFT + 12;
         int searchY = -24;
@@ -163,6 +167,23 @@ public final class OverlayRenderer {
                 searchY + 4,
                 0xFFAAAAAA
         );
+
+        if (bindingMode && bindingTarget != null) {
+            String actionName = Text.translatable(bindingTarget.getTranslationKey()).getString();
+
+            int promptX = searchX + searchWidth + 12;
+            int promptY = searchY + 4;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Select a key for: " + actionName + "   ESC = Cancel"),
+                    promptX,
+                    promptY,
+                    0xFFFF6666
+            );
+
+            return;
+        }
 
         int buttonX = searchX + searchWidth + 12;
         int buttonY = -24;
@@ -1181,6 +1202,83 @@ public final class OverlayRenderer {
 
                     if (insideVisibleDrawer && onThisRow && onAction) {
                         return "action:" + modName + "|" + actionName;
+                    }
+
+                    itemY += DRAWER_LINE_HEIGHT;
+                }
+
+                itemY += 4;
+            }
+        }
+
+        return null;
+    }
+
+    public static KeyBinding getDrawerActionBindingClickAt(
+            int mouseX,
+            int mouseY,
+            int drawerScroll,
+            boolean quickExpanded,
+            boolean categoriesExpanded,
+            boolean modsExpanded,
+            java.util.Set<String> expandedMods
+    ) {
+        if (!modsExpanded) {
+            return null;
+        }
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        Map<Integer, List<KeyBinding>> bindingsByKey = groupKeybinds(client.options.allKeys);
+
+        int drawerY = LAYOUT_TOP + 8;
+        int drawerHeight = LAYOUT_BOTTOM - LAYOUT_TOP - 16;
+
+        int itemX = DRAWER_X + DRAWER_PADDING;
+        int itemY = drawerY + DRAWER_CONTENT_Y_OFFSET - drawerScroll;
+
+        itemY += 14;
+
+        if (quickExpanded) {
+            itemY += QUICK_FILTERS.length * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        if (categoriesExpanded) {
+            itemY += getCategories(bindingsByKey).size() * DRAWER_LINE_HEIGHT;
+            itemY += 10;
+        }
+
+        itemY += 14;
+
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String modName : getMods(bindingsByKey)) {
+            itemY += DRAWER_LINE_HEIGHT;
+
+            if (expandedMods.contains(modName)) {
+                for (KeyBinding binding : getBindingsForCategory(getAllKeyBindings(), modName)) {
+                    String bindingLabel = getBindingDisplayName(binding);
+                    int bindingLabelX = DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING - textRenderer.getWidth(bindingLabel);
+
+                    boolean insideVisibleDrawer =
+                            local.y() >= drawerY + 28
+                                    && local.y() <= drawerY + drawerHeight;
+
+                    boolean onThisRow =
+                            local.y() >= itemY - 2
+                                    && local.y() <= itemY + 10;
+
+                    boolean onBindingLabel =
+                            local.x() >= bindingLabelX - 6
+                                    && local.x() <= DRAWER_X + DRAWER_WIDTH - DRAWER_PADDING;
+
+                    if (insideVisibleDrawer && onThisRow && onBindingLabel) {
+                        return binding;
                     }
 
                     itemY += DRAWER_LINE_HEIGHT;

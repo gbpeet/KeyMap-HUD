@@ -15,6 +15,8 @@ public class KeyMapScreen extends Screen {
     private boolean modsExpanded = false;
     private final java.util.Set<String> expandedMods = new java.util.HashSet<>();
 
+    private boolean bindingMode = false;
+    private net.minecraft.client.option.KeyBinding bindingTarget = null;
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
     }
@@ -48,6 +50,12 @@ public class KeyMapScreen extends Screen {
         if (KeyBindings.matchesOverlayKey(keyCode, scanCode)) {
             KeyMapHUDClient.waitingForRelease = true;
             close();
+            return true;
+        }
+
+        if (bindingMode && keyCode == 256) { // ESC
+            bindingMode = false;
+            bindingTarget = null;
             return true;
         }
 
@@ -85,7 +93,9 @@ public class KeyMapScreen extends Screen {
                 quickExpanded,
                 categoriesExpanded,
                 modsExpanded,
-                expandedMods
+                expandedMods,
+                bindingMode,
+                bindingTarget
         );
     }
 
@@ -198,6 +208,27 @@ public class KeyMapScreen extends Screen {
 
             if (modFilter != null) {
                 searchQuery = modFilter;
+                return true;
+            }
+
+            net.minecraft.client.option.KeyBinding rebindTarget = OverlayRenderer.getDrawerActionBindingClickAt(
+                    (int) mouseX,
+                    (int) mouseY,
+                    drawerScroll,
+                    quickExpanded,
+                    categoriesExpanded,
+                    modsExpanded,
+                    expandedMods
+            );
+
+            if (rebindTarget != null) {
+                bindingMode = true;
+                bindingTarget = rebindTarget;
+
+                String category = Text.translatable(rebindTarget.getCategory()).getString();
+                String action = Text.translatable(rebindTarget.getTranslationKey()).getString();
+                searchQuery = "action:" + category + "|" + action;
+
                 return true;
             }
 
