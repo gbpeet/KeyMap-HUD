@@ -18,6 +18,8 @@ public class KeyMapScreen extends Screen {
 
     private boolean bindingMode = false;
     private net.minecraft.client.option.KeyBinding bindingTarget = null;
+    private net.minecraft.client.util.InputUtil.Key lastBoundKey = null;
+    private long lastBoundAtMillis = 0L;
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
     }
@@ -102,7 +104,9 @@ public class KeyMapScreen extends Screen {
                 expandedCategories,
                 expandedMods,
                 bindingMode,
-                bindingTarget
+                bindingTarget,
+                lastBoundKey,
+                lastBoundAtMillis
         );
     }
 
@@ -383,6 +387,8 @@ public class KeyMapScreen extends Screen {
         }
 
         net.minecraft.client.option.KeyBinding.updateKeysByCode();
+        lastBoundKey = key;
+        lastBoundAtMillis = System.currentTimeMillis();
 
         if (this.client != null) {
             this.client.options.write();

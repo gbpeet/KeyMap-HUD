@@ -67,7 +67,9 @@ public final class OverlayRenderer {
             java.util.Set<String> expandedCategories,
             java.util.Set<String> expandedMods,
             boolean bindingMode,
-            KeyBinding bindingTarget
+            KeyBinding bindingTarget,
+            InputUtil.Key lastBoundKey,
+            long lastBoundAtMillis
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -102,6 +104,33 @@ public final class OverlayRenderer {
             boolean isHoveredForBinding = bindingMode && isMouseOverKey(key, localMouseX, localMouseY);
 
             drawKey(context, textRenderer, bindingsByKey, key, searchQuery);
+
+            long flashElapsed = System.currentTimeMillis() - lastBoundAtMillis;
+
+            boolean flashVisible =
+                    flashElapsed < 900
+                            && (flashElapsed % 300) < 150;
+
+            if (lastBoundKey != null
+                    && flashVisible
+                    && key.keyCode() == keyCodeFromInputKey(lastBoundKey)) {
+
+                context.drawBorder(
+                        key.x() - 3,
+                        key.y() - 3,
+                        key.width() + 6,
+                        key.height() + 6,
+                        0xFFFFCC55
+                );
+
+                context.drawBorder(
+                        key.x() - 4,
+                        key.y() - 4,
+                        key.width() + 8,
+                        key.height() + 8,
+                        0xFFFFFFFF
+                );
+            }
 
             if (isHoveredForBinding) {
                 context.drawBorder(
@@ -589,6 +618,17 @@ public final class OverlayRenderer {
     private static int getKeyCodeForBinding(KeyBinding binding) {
         InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
 
+        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
+            return GLFW.GLFW_KEY_UNKNOWN;
+        }
+
+        return switch (key.getCategory()) {
+            case MOUSE -> -100 + key.getCode();
+            default -> key.getCode();
+        };
+    }
+
+    private static int keyCodeFromInputKey(InputUtil.Key key) {
         if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
             return GLFW.GLFW_KEY_UNKNOWN;
         }
