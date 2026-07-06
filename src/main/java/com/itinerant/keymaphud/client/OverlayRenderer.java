@@ -584,13 +584,13 @@ public final class OverlayRenderer {
     }
 
     private static String getBindingDisplayName(KeyBinding binding) {
-        InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
+        String vanillaName = binding.getBoundKeyLocalizedText().getString();
 
-        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
+        if (vanillaName.equals("Not Bound")) {
             return "Unbound";
         }
 
-        return key.getLocalizedText().getString();
+        return vanillaName;
     }
 
     private static int getActionStatusColor(KeyBinding binding) {
@@ -618,6 +618,11 @@ public final class OverlayRenderer {
     private static int getKeyCodeForBinding(KeyBinding binding) {
         InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
 
+        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN
+                && !binding.getBoundKeyLocalizedText().getString().equals("Not Bound")) {
+            key = binding.getDefaultKey();
+        }
+
         if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
             return GLFW.GLFW_KEY_UNKNOWN;
         }
@@ -644,6 +649,11 @@ public final class OverlayRenderer {
 
         for (KeyBinding binding : allKeys) {
             InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
+
+            if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN
+                    && !binding.getBoundKeyLocalizedText().getString().equals("Not Bound")) {
+                key = binding.getDefaultKey();
+            }
 
             int keyCode;
             switch (key.getCategory()) {
