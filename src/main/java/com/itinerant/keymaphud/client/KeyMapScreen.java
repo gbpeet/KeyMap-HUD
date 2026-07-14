@@ -20,8 +20,16 @@ public class KeyMapScreen extends Screen {
     private net.minecraft.client.option.KeyBinding bindingTarget = null;
     private net.minecraft.client.util.InputUtil.Key lastBoundKey = null;
     private long lastBoundAtMillis = 0L;
+
+    private boolean labelEditMode = false;
+    private Integer labelEditKeyCode = null;
+    private String labelEditText = "";
     public KeyMapScreen() {
         super(Text.literal("KeyMap HUD"));
+        KeyMapConfigManager.load();
+        searchQuery = KeyMapConfigManager.get().lastSearch == null
+                ? ""
+                : KeyMapConfigManager.get().lastSearch;
     }
 
     @Override
@@ -40,6 +48,15 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean charTyped(char chr, int modifiers) {
+        if (labelEditMode) {
+            if (!Character.isISOControl(chr) && labelEditText.length() < 6) {
+                labelEditText += chr;
+                return true;
+            }
+
+            return true;
+        }
+
         if (!Character.isISOControl(chr)) {
             searchQuery += chr;
             return true;
@@ -50,6 +67,27 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (labelEditMode) {
+            if (keyCode == 257 || keyCode == 335) { // Enter or numpad Enter
+                saveLabelEdit();
+                return true;
+            }
+
+            if (keyCode == 256) { // Escape
+                cancelLabelEdit();
+                return true;
+            }
+
+            if (keyCode == 259) { // Backspace
+                if (!labelEditText.isEmpty()) {
+                    labelEditText = labelEditText.substring(0, labelEditText.length() - 1);
+                }
+                return true;
+            }
+
+            return true;
+        }
+
         if (KeyBindings.matchesOverlayKey(keyCode, scanCode)) {
             KeyMapHUDClient.waitingForRelease = true;
             close();
@@ -106,7 +144,11 @@ public class KeyMapScreen extends Screen {
                 bindingMode,
                 bindingTarget,
                 lastBoundKey,
-                lastBoundAtMillis
+                lastBoundAtMillis,
+                KeyMapConfigManager.get(),
+                labelEditMode,
+                labelEditKeyCode,
+                labelEditText
         );
     }
 
@@ -119,12 +161,12 @@ public class KeyMapScreen extends Screen {
                     Math.min(
                             drawerScroll,
                             OverlayRenderer.getMaxDrawerScroll(
-                            quickExpanded,
-                            categoriesExpanded,
-                            modsExpanded,
-                            expandedCategories,
-                            expandedMods
-                    )
+                                    quickExpanded,
+                                    categoriesExpanded,
+                                    modsExpanded,
+                                    expandedCategories,
+                                    expandedMods
+                            )
                     )
             );
             return true;
@@ -148,6 +190,26 @@ public class KeyMapScreen extends Screen {
             if (clickedKey != null) {
                 assignBinding(clickedKey);
                 return true;
+            }
+
+            return true;
+        }
+
+        Integer clickedVisualKey = OverlayRenderer.getVisualKeyCodeAt((int) mouseX, (int) mouseY);
+
+        if (clickedVisualKey != null && button == 1) { // Right-click: edit label
+            beginLabelEdit(clickedVisualKey);
+            return true;
+        }
+
+        if (clickedVisualKey != null && button == 2) { // Middle-click: clear label
+            KeyMapConfigManager.get().clearLabel(clickedVisualKey);
+            KeyMapConfigManager.save();
+
+            if (labelEditMode
+                    && labelEditKeyCode != null
+                    && labelEditKeyCode.equals(clickedVisualKey)) {
+                labelEditText = "";
             }
 
             return true;
@@ -178,12 +240,12 @@ public class KeyMapScreen extends Screen {
                 drawerScroll = Math.min(
                         drawerScroll,
                         OverlayRenderer.getMaxDrawerScroll(
-                            quickExpanded,
-                            categoriesExpanded,
-                            modsExpanded,
-                            expandedCategories,
-                            expandedMods
-                    )
+                                quickExpanded,
+                                categoriesExpanded,
+                                modsExpanded,
+                                expandedCategories,
+                                expandedMods
+                        )
                 );
                 return true;
             }
@@ -298,12 +360,12 @@ public class KeyMapScreen extends Screen {
                 drawerScroll = Math.min(
                         drawerScroll,
                         OverlayRenderer.getMaxDrawerScroll(
-                            quickExpanded,
-                            categoriesExpanded,
-                            modsExpanded,
-                            expandedCategories,
-                            expandedMods
-                    )
+                                quickExpanded,
+                                categoriesExpanded,
+                                modsExpanded,
+                                expandedCategories,
+                                expandedMods
+                        )
                 );
 
                 return true;
@@ -372,6 +434,34 @@ public class KeyMapScreen extends Screen {
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void removed() {
+        KeyMapConfigManager.get().lastSearch = searchQuery;
+        KeyMapConfigManager.save();
+        super.removed();
+    }
+
+    private void beginLabelEdit(int keyCode) {
+        labelEditMode = true;
+        labelEditKeyCode = keyCode;
+        labelEditText = KeyMapConfigManager.get().getLabel(keyCode);
+    }
+
+    private void saveLabelEdit() {
+        if (labelEditKeyCode != null) {
+            KeyMapConfigManager.get().setLabel(labelEditKeyCode, labelEditText);
+            KeyMapConfigManager.save();
+        }
+
+        cancelLabelEdit();
+    }
+
+    private void cancelLabelEdit() {
+        labelEditMode = false;
+        labelEditKeyCode = null;
+        labelEditText = "";
     }
 
     private void assignBinding(net.minecraft.client.util.InputUtil.Key key) {

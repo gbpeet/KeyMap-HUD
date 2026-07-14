@@ -69,7 +69,11 @@ public final class OverlayRenderer {
             boolean bindingMode,
             KeyBinding bindingTarget,
             InputUtil.Key lastBoundKey,
-            long lastBoundAtMillis
+            long lastBoundAtMillis,
+            KeyMapConfig config,
+            boolean labelEditMode,
+            Integer labelEditKeyCode,
+            String labelEditText
     ) {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -97,13 +101,13 @@ public final class OverlayRenderer {
 
         drawMouseClusterLabel(context, textRenderer);
         drawTitle(context, textRenderer);
-        drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen, bindingMode, bindingTarget);
+        drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen, bindingMode, bindingTarget, labelEditMode, labelEditKeyCode, labelEditText);
         drawStatsBar(context, textRenderer, bindingsByKey);
 
         for (KeyVisual key : KeyboardLayout.ansiFull()) {
             boolean isHoveredForBinding = bindingMode && isMouseOverKey(key, localMouseX, localMouseY);
 
-            drawKey(context, textRenderer, bindingsByKey, key, searchQuery);
+            drawKey(context, textRenderer, bindingsByKey, key, searchQuery, config.getLabel(key.keyCode()));
 
             long flashElapsed = System.currentTimeMillis() - lastBoundAtMillis;
 
@@ -156,7 +160,7 @@ public final class OverlayRenderer {
             }
         }
 
-        if (filterDrawerOpen && !bindingMode) {
+        if (filterDrawerOpen && !bindingMode && !labelEditMode) {
             KeyBinding hoveredCategoryBinding = getDrawerCategoryActionBindingClickAt(
                     mouseX,
                     mouseY,
@@ -201,7 +205,7 @@ public final class OverlayRenderer {
         context.getMatrices().pop();
 
         if (hoveredKey != null) {
-            drawTooltip(context, textRenderer, bindingsByKey, hoveredKey, mouseX, mouseY);
+            drawTooltip(context, textRenderer, bindingsByKey, hoveredKey, mouseX, mouseY, config.getLabel(hoveredKey.keyCode()));
         }
 
         if (bindingLabelHovered) {
@@ -236,7 +240,10 @@ public final class OverlayRenderer {
             String searchQuery,
             boolean filterDrawerOpen,
             boolean bindingMode,
-            KeyBinding bindingTarget
+            KeyBinding bindingTarget,
+            boolean labelEditMode,
+            Integer labelEditKeyCode,
+            String labelEditText
     ) {
         int searchX = LAYOUT_LEFT + 12;
         int searchY = -24;
@@ -253,6 +260,45 @@ public final class OverlayRenderer {
                 searchY + 4,
                 0xFFAAAAAA
         );
+
+        if (labelEditMode && labelEditKeyCode != null) {
+            String keyName = getVisualKeyName(labelEditKeyCode);
+            String cursor = (System.currentTimeMillis() / 500) % 2 == 0 ? "_" : "";
+
+            int promptX = searchX + searchWidth + 12;
+            int promptY = searchY + 4;
+            int x = promptX;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Label " + keyName + ": "),
+                    x,
+                    promptY,
+                    0xFFFFFFFF
+            );
+
+            x += textRenderer.getWidth("Label " + keyName + ": ");
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal(labelEditText + cursor),
+                    x,
+                    promptY,
+                    0xFFFFCC55
+            );
+
+            x += textRenderer.getWidth(labelEditText + "_");
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("   ENTER = Save   ESC = Cancel   Middle-click = Clear   Max 6 characters"),
+                    x,
+                    promptY,
+                    0xFFFF6666
+            );
+
+            return;
+        }
 
         if (bindingMode && bindingTarget != null) {
             String actionName = Text.translatable(bindingTarget.getTranslationKey()).getString();
@@ -674,7 +720,8 @@ public final class OverlayRenderer {
             TextRenderer textRenderer,
             Map<Integer, List<KeyBinding>> bindingsByKey,
             KeyVisual key,
-            String searchQuery
+            String searchQuery,
+            String customLabel
     ) {
         List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
         int count = bindings.size();
@@ -695,10 +742,24 @@ public final class OverlayRenderer {
         context.fill(x, y, x + key.width(), y + key.height(), color);
         context.drawBorder(x, y, key.width(), key.height(), matchesSearch ? BORDER_COLOR : 0x66FFFFFF);
 
-        int labelY = y + 7;
+        boolean hasCustomLabel = customLabel != null && !customLabel.isBlank();
+
+        int labelY = hasCustomLabel ? y + 2 : y + 7;
         int labelX = x + (key.width() - textRenderer.getWidth(key.label())) / 2;
 
         context.drawTextWithShadow(textRenderer, Text.literal(key.label()), labelX, labelY, textColor);
+
+        if (hasCustomLabel) {
+            drawScaledCenteredText(
+                    context,
+                    textRenderer,
+                    customLabel,
+                    x + key.width() / 2,
+                    y + 13,
+                    0.65f,
+                    0xFFCCCCCC
+            );
+        }
     }
 
     private static boolean matchesSearch(KeyVisual key, List<KeyBinding> bindings, String searchQuery) {
@@ -882,7 +943,8 @@ public final class OverlayRenderer {
             Map<Integer, List<KeyBinding>> bindingsByKey,
             KeyVisual key,
             int mouseX,
-            int mouseY
+            int mouseY,
+            String customLabel
     ) {
         List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
 
@@ -901,6 +963,16 @@ public final class OverlayRenderer {
             }
 
             lines.remove(lines.size() - 1);
+        }
+
+        lines.add(Text.literal(""));
+
+        if (customLabel != null && !customLabel.isBlank()) {
+            lines.add(Text.literal("Label: " + customLabel));
+            lines.add(Text.literal("Right-click to edit label"));
+            lines.add(Text.literal("Middle-click to clear label"));
+        } else {
+            lines.add(Text.literal("Right-click to add label"));
         }
 
         int padding = 6;
@@ -1576,6 +1648,19 @@ public final class OverlayRenderer {
         return null;
     }
 
+    public static Integer getVisualKeyCodeAt(int mouseX, int mouseY) {
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+            if (isMouseOverKey(key, local.x(), local.y())) {
+                return key.keyCode();
+            }
+        }
+
+        return null;
+    }
+
     public static InputUtil.Key getVisualKeyAt(int mouseX, int mouseY) {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
@@ -1865,6 +1950,16 @@ public final class OverlayRenderer {
 
         boolean showCursor = !bindingMode && (System.currentTimeMillis() / 500) % 2 == 0;
         return searchQuery + (showCursor ? "_" : "");
+    }
+
+    private static String getVisualKeyName(int keyCode) {
+        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+            if (key.keyCode() == keyCode) {
+                return key.label();
+            }
+        }
+
+        return Integer.toString(keyCode);
     }
 
     private static LayoutInfo getLayoutInfo() {
