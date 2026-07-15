@@ -101,6 +101,26 @@ public final class KeyMapConfigScreen extends Screen {
                 Text.literal("Displays the mouse cluster on the left or right side of the keyboard.")
         ));
 
+        rowY += rowGap;
+
+        ButtonWidget profilesButton = addDrawableChild(
+                ButtonWidget.builder(
+                                Text.literal("Manage Profiles..."),
+                                button -> {
+                                    KeyMapConfigManager.save();
+
+                                    if (client != null) {
+                                        client.setScreen(new KeyMapProfilesScreen(this));
+                                    }
+                                }
+                        )
+                        .dimensions(buttonX, rowY, 150, 20)
+                        .build()
+        );
+        profilesButton.setTooltip(Tooltip.of(
+                Text.literal("Export, import, and share complete keybinding profiles.")
+        ));
+
         int bottomY = height - 38;
 
         addDrawableChild(
@@ -145,6 +165,7 @@ public final class KeyMapConfigScreen extends Screen {
         context.drawTextWithShadow(textRenderer, Text.literal("HUD Scale"), left, rowY + rowGap, 0xFFFFFF);
         context.drawTextWithShadow(textRenderer, Text.literal("HUD Position"), left, rowY + rowGap * 2, 0xFFFFFF);
         context.drawTextWithShadow(textRenderer, Text.literal("Mouse Position"), left, rowY + rowGap * 3, 0xFFFFFF);
+        context.drawTextWithShadow(textRenderer, Text.literal("Keybinding Profiles"), left, rowY + rowGap * 4, 0xFFFFFF);
     }
 
     @Override
