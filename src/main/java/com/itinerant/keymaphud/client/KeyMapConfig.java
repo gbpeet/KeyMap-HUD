@@ -8,8 +8,7 @@ public final class KeyMapConfig {
 
     public String keyboardLayout = "ANSI_US";
     public float hudScale = 1.0f;
-    public String horizontalAlignment = "CENTER";
-    public String anchor = "CENTER";
+    public String hudPosition = "CENTER";
     public String mousePosition = "RIGHT";
 
     public String lastSearch = "";

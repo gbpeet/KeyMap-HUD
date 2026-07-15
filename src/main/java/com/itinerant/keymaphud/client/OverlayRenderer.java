@@ -104,7 +104,7 @@ public final class OverlayRenderer {
         drawSearchAndTopFilters(context, textRenderer, searchQuery, filterDrawerOpen, bindingMode, bindingTarget, labelEditMode, labelEditKeyCode, labelEditText);
         drawStatsBar(context, textRenderer, bindingsByKey);
 
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+        for (KeyVisual key : KeyboardLayout.current()) {
             boolean isHoveredForBinding = bindingMode && isMouseOverKey(key, localMouseX, localMouseY);
 
             drawKey(context, textRenderer, bindingsByKey, key, searchQuery, config.getLabel(key.keyCode()));
@@ -220,8 +220,12 @@ public final class OverlayRenderer {
     }
 
     private static void drawMouseClusterLabel(DrawContext context, TextRenderer textRenderer) {
-        context.drawBorder(790, 56, 108, 126, BORDER_COLOR);
-        context.drawTextWithShadow(textRenderer, Text.literal("Mouse"), 827, 44, 0xFFCCCCCC);
+        boolean left = "LEFT".equals(KeyMapConfigManager.get().mousePosition);
+        int clusterX = left ? 0 : 790;
+        int labelX = left ? 37 : 827;
+
+        context.drawBorder(clusterX, 56, 108, 126, BORDER_COLOR);
+        context.drawTextWithShadow(textRenderer, Text.literal("Mouse"), labelX, 44, 0xFFCCCCCC);
     }
 
     private static void drawTitle(DrawContext context, TextRenderer textRenderer) {
@@ -1092,11 +1096,11 @@ public final class OverlayRenderer {
             TextRenderer textRenderer,
             Map<Integer, List<KeyBinding>> bindingsByKey
     ) {
-        int totalKeys = KeyboardLayout.ansiFull().size();
+        int totalKeys = KeyboardLayout.current().size();
         int boundKeys = 0;
         int conflictKeys = 0;
 
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+        for (KeyVisual key : KeyboardLayout.current()) {
             List<KeyBinding> bindings = bindingsByKey.getOrDefault(key.keyCode(), List.of());
 
             if (!bindings.isEmpty()) {
@@ -1652,7 +1656,7 @@ public final class OverlayRenderer {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+        for (KeyVisual key : KeyboardLayout.current()) {
             if (isMouseOverKey(key, local.x(), local.y())) {
                 return key.keyCode();
             }
@@ -1665,7 +1669,7 @@ public final class OverlayRenderer {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+        for (KeyVisual key : KeyboardLayout.current()) {
             if (isMouseOverKey(key, local.x(), local.y())) {
                 int keyCode = key.keyCode();
 
@@ -1953,7 +1957,7 @@ public final class OverlayRenderer {
     }
 
     private static String getVisualKeyName(int keyCode) {
-        for (KeyVisual key : KeyboardLayout.ansiFull()) {
+        for (KeyVisual key : KeyboardLayout.current()) {
             if (key.keyCode() == keyCode) {
                 return key.label();
             }
@@ -1964,6 +1968,7 @@ public final class OverlayRenderer {
 
     private static LayoutInfo getLayoutInfo() {
         MinecraftClient client = MinecraftClient.getInstance();
+        KeyMapConfig config = KeyMapConfigManager.get();
 
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
@@ -1971,14 +1976,42 @@ public final class OverlayRenderer {
         int layoutWidth = LAYOUT_RIGHT - LAYOUT_LEFT;
         int layoutHeight = LAYOUT_BOTTOM - LAYOUT_TOP;
 
-        float scale = Math.min(
+        float fitScale = Math.min(
                 (screenWidth - 24) / (float) layoutWidth,
                 (screenHeight - 24) / (float) layoutHeight
         );
-        scale = Math.min(scale, 1.0f);
 
-        int originX = (int) ((screenWidth - layoutWidth * scale) / 2.0f - LAYOUT_LEFT * scale);
-        int originY = (int) ((screenHeight - layoutHeight * scale) / 2.0f - LAYOUT_TOP * scale);
+        float currentDefaultScale = Math.min(fitScale, 1.0f);
+        float configuredScale = currentDefaultScale * config.hudScale;
+        float scale = Math.min(configuredScale, fitScale);
+
+        float scaledWidth = layoutWidth * scale;
+        float scaledHeight = layoutHeight * scale;
+        int margin = 12;
+
+        String position = config.hudPosition == null ? "CENTER" : config.hudPosition;
+
+        float contentLeft;
+        float contentTop;
+
+        if (position.endsWith("LEFT")) {
+            contentLeft = margin;
+        } else if (position.endsWith("RIGHT")) {
+            contentLeft = screenWidth - scaledWidth - margin;
+        } else {
+            contentLeft = (screenWidth - scaledWidth) / 2.0f;
+        }
+
+        if (position.startsWith("TOP")) {
+            contentTop = margin;
+        } else if (position.startsWith("BOTTOM")) {
+            contentTop = screenHeight - scaledHeight - margin;
+        } else {
+            contentTop = (screenHeight - scaledHeight) / 2.0f;
+        }
+
+        int originX = Math.round(contentLeft - LAYOUT_LEFT * scale);
+        int originY = Math.round(contentTop - LAYOUT_TOP * scale);
 
         return new LayoutInfo(originX, originY, scale, layoutWidth, layoutHeight);
     }

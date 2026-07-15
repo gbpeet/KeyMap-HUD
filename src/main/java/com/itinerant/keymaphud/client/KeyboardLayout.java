@@ -7,7 +7,15 @@ public final class KeyboardLayout {
     private KeyboardLayout() {}
 
     public static List<KeyVisual> ansiFull() {
-        return List.of(
+        return ansiFull("RIGHT");
+    }
+
+    public static List<KeyVisual> current() {
+        return ansiFull(KeyMapConfigManager.get().mousePosition);
+    }
+
+    public static List<KeyVisual> ansiFull(String mousePosition) {
+        List<KeyVisual> base = List.of(
                 // Function row
                 key(GLFW.GLFW_KEY_ESCAPE, "ESC", 0, 0),
                 key(GLFW.GLFW_KEY_F1, "F1", 56, 0),
@@ -138,6 +146,34 @@ public final class KeyboardLayout {
                 new KeyVisual(GLFW.GLFW_KEY_KP_0, "0", 632, 156, 60, 22),
                 key(GLFW.GLFW_KEY_KP_DECIMAL, ".", 696, 156)
         );
+
+        if (!"LEFT".equals(mousePosition)) {
+            return base;
+        }
+
+        return base.stream()
+                .map(key -> {
+                    if (key.keyCode() < 0) {
+                        return new KeyVisual(
+                                key.keyCode(),
+                                key.label(),
+                                key.x() - 790,
+                                key.y(),
+                                key.width(),
+                                key.height()
+                        );
+                    }
+
+                    return new KeyVisual(
+                            key.keyCode(),
+                            key.label(),
+                            key.x() + 120,
+                            key.y(),
+                            key.width(),
+                            key.height()
+                    );
+                })
+                .toList();
     }
 
     private static KeyVisual key(int keyCode, String label, int x, int y) {

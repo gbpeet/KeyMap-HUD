@@ -49,11 +49,47 @@ public final class KeyMapConfigManager {
 
             config.labels.replaceAll((key, value) -> KeyMapConfig.sanitizeLabel(value));
             config.labels.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+
+            if (config.keyboardLayout == null || config.keyboardLayout.isBlank()) {
+                config.keyboardLayout = "ANSI_US";
+            }
+
+            config.hudScale = sanitizeHudScale(config.hudScale);
+
+            if (config.hudPosition == null || config.hudPosition.isBlank()) {
+                config.hudPosition = "CENTER";
+            }
+
+            if (config.mousePosition == null
+                    || (!config.mousePosition.equals("LEFT") && !config.mousePosition.equals("RIGHT"))) {
+                config.mousePosition = "RIGHT";
+            }
+
+            if (config.lastSearch == null) {
+                config.lastSearch = "";
+            }
         } catch (Exception exception) {
             System.err.println("[KeyMap HUD] Could not read config/keymaphud.json. Using defaults.");
             exception.printStackTrace();
             config = new KeyMapConfig();
         }
+    }
+
+    private static float sanitizeHudScale(float value) {
+        float[] allowed = {0.50f, 0.75f, 1.00f, 1.25f, 1.50f};
+        float closest = 1.00f;
+        float closestDistance = Float.MAX_VALUE;
+
+        for (float candidate : allowed) {
+            float distance = Math.abs(candidate - value);
+
+            if (distance < closestDistance) {
+                closest = candidate;
+                closestDistance = distance;
+            }
+        }
+
+        return closest;
     }
 
     public static synchronized void save() {
