@@ -2,7 +2,6 @@ package com.itinerant.keymaphud.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.itinerant.keymaphud.mixin.KeyBindingAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.SharedConstants;
@@ -76,7 +75,7 @@ public final class KeyMapProfileManager {
                 ));
 
         for (KeyBinding binding : client.options.allKeys) {
-            InputUtil.Key key = getEffectiveKey(binding);
+            InputUtil.Key key = KeyBindingResolver.getEffectiveKey(binding);
 
             data.keybindings.add(
                     new KeyMapProfileData.BindingEntry(
@@ -267,17 +266,6 @@ public final class KeyMapProfileManager {
 
     private static String bindingIdentity(String categoryKey, String translationKey) {
         return nonBlank(categoryKey, "") + "\u0000" + nonBlank(translationKey, "");
-    }
-
-    private static InputUtil.Key getEffectiveKey(KeyBinding binding) {
-        InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
-
-        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN
-                && !"Not Bound".equals(binding.getBoundKeyLocalizedText().getString())) {
-            key = binding.getDefaultKey();
-        }
-
-        return key;
     }
 
     private static int countSettingChanges(KeyMapProfileData data) {

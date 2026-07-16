@@ -1,7 +1,6 @@
 package com.itinerant.keymaphud.client;
 
 import com.itinerant.keymaphud.client.KeyboardLayout.KeyVisual;
-import com.itinerant.keymaphud.mixin.KeyBindingAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -666,21 +665,7 @@ public final class OverlayRenderer {
     }
 
     private static int getKeyCodeForBinding(KeyBinding binding) {
-        InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
-
-        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN
-                && !binding.getBoundKeyLocalizedText().getString().equals("Not Bound")) {
-            key = binding.getDefaultKey();
-        }
-
-        if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN) {
-            return GLFW.GLFW_KEY_UNKNOWN;
-        }
-
-        return switch (key.getCategory()) {
-            case MOUSE -> -100 + key.getCode();
-            default -> key.getCode();
-        };
+        return KeyBindingResolver.getEffectiveKeyCode(binding);
     }
 
     private static int keyCodeFromInputKey(InputUtil.Key key) {
@@ -698,18 +683,7 @@ public final class OverlayRenderer {
         Map<Integer, List<KeyBinding>> bindingsByKey = new HashMap<>();
 
         for (KeyBinding binding : allKeys) {
-            InputUtil.Key key = ((KeyBindingAccessor) binding).getBoundKey();
-
-            if (key.getCode() == GLFW.GLFW_KEY_UNKNOWN
-                    && !binding.getBoundKeyLocalizedText().getString().equals("Not Bound")) {
-                key = binding.getDefaultKey();
-            }
-
-            int keyCode;
-            switch (key.getCategory()) {
-                case MOUSE -> keyCode = -100 + key.getCode();
-                default -> keyCode = key.getCode();
-            }
+            int keyCode = KeyBindingResolver.getEffectiveKeyCode(binding);
 
             if (keyCode != GLFW.GLFW_KEY_UNKNOWN) {
                 bindingsByKey.computeIfAbsent(keyCode, ignored -> new ArrayList<>()).add(binding);
