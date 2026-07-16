@@ -44,6 +44,9 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        // Blur the paused game world behind KeyMap HUD without adding
+        // Minecraft's normal dark menu overlay.
+        applyBlur(delta);
     }
 
     @Override
@@ -128,6 +131,8 @@ public class KeyMapScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackground(context, mouseX, mouseY, delta);
+
         OverlayRenderer.renderScreen(
                 context,
                 mouseX,
