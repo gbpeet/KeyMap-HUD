@@ -235,6 +235,20 @@ public final class OverlayRenderer {
         context.getMatrices().scale(2.0f, 2.0f, 1.0f);
         context.drawTextWithShadow(textRenderer, title, 0, 0, TEXT_COLOR);
         context.getMatrices().pop();
+
+        String activeProfileName = KeyMapConfigManager.get().activeProfileName;
+
+        if (activeProfileName != null && !activeProfileName.isBlank()) {
+            int profileX = LAYOUT_LEFT + 12 + (textRenderer.getWidth("KeyMap HUD") * 2) + 12;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal("Profile: " + activeProfileName),
+                    profileX,
+                    -51,
+                    0xFFAAAAAA
+            );
+        }
     }
 
     private static void drawSearchAndTopFilters(
@@ -355,6 +369,10 @@ public final class OverlayRenderer {
         String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
         int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
         drawButton(context, textRenderer, drawerLabel, drawerButtonX, buttonY, drawerWidth);
+
+        int profilesButtonX = drawerButtonX + drawerWidth + 6;
+        int profilesWidth = textRenderer.getWidth("Profiles") + 16;
+        drawButton(context, textRenderer, "Profiles", profilesButtonX, buttonY, profilesWidth);
     }
 
     private static void drawButton(DrawContext context, TextRenderer textRenderer, String label, int x, int y, int width) {
@@ -1150,6 +1168,36 @@ public final class OverlayRenderer {
 
         return local.x() >= drawerButtonX
                 && local.x() <= drawerButtonX + drawerWidth
+                && local.y() >= buttonY
+                && local.y() <= buttonY + 14;
+    }
+
+    public static boolean isProfilesButtonAt(int mouseX, int mouseY, boolean filterDrawerOpen) {
+        LayoutInfo layout = getLayoutInfo();
+        LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
+
+        int searchX = LAYOUT_LEFT + 12;
+        int searchWidth = 260;
+
+        int buttonX = searchX + searchWidth + 12;
+        int buttonY = -24;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        TextRenderer textRenderer = client.textRenderer;
+
+        for (String filter : QUICK_FILTERS) {
+            int width = textRenderer.getWidth(filter) + 12;
+            buttonX += width + 6;
+        }
+
+        String drawerLabel = filterDrawerOpen ? "Filters ▲" : "Filters ▼";
+        int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
+
+        int profilesButtonX = buttonX + drawerWidth + 6;
+        int profilesWidth = textRenderer.getWidth("Profiles") + 16;
+
+        return local.x() >= profilesButtonX
+                && local.x() <= profilesButtonX + profilesWidth
                 && local.y() >= buttonY
                 && local.y() <= buttonY + 14;
     }

@@ -219,6 +219,9 @@ public final class KeyMapProfileManager {
 
         KeyMapConfig config = KeyMapConfigManager.get();
 
+        config.activeProfileName =
+                data.profileName == null ? "" : data.profileName.strip();
+
         if (data.keyLabels != null) {
             config.labels = new LinkedHashMap<>();
 

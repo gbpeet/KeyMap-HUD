@@ -215,6 +215,13 @@ public class KeyMapScreen extends Screen {
             return true;
         }
 
+        if (OverlayRenderer.isProfilesButtonAt((int) mouseX, (int) mouseY, filterDrawerOpen)) {
+            if (this.client != null) {
+                this.client.setScreen(new KeyMapProfilesScreen(this));
+            }
+            return true;
+        }
+
         if (OverlayRenderer.isFilterDrawerButtonAt((int) mouseX, (int) mouseY, filterDrawerOpen)) {
             filterDrawerOpen = !filterDrawerOpen;
             return true;

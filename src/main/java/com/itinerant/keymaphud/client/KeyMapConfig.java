@@ -12,6 +12,7 @@ public final class KeyMapConfig {
     public String mousePosition = "RIGHT";
 
     public String lastSearch = "";
+    public String activeProfileName = "";
 
     public Map<String, String> labels = new LinkedHashMap<>();
 
