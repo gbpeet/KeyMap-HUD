@@ -23,8 +23,8 @@ public final class OverlayRenderer {
 
     private static final int LAYOUT_LEFT = 0;
     private static final int LAYOUT_RIGHT = 900;
-    private static final int LAYOUT_TOP = -62;
-    private static final int LAYOUT_BOTTOM = 210;
+    private static final int LAYOUT_TOP = -78;
+    private static final int LAYOUT_BOTTOM = 220;
 
     private static final int DRAWER_X = 650;
     private static final int DRAWER_WIDTH = 240;
@@ -39,6 +39,8 @@ public final class OverlayRenderer {
     private static final int ACTION_BOUND_COLOR = 0xFFFFCC55;
     private static final int ACTION_UNBOUND_COLOR = 0xFF888888;
     private static final int ACTION_CONFLICT_COLOR = 0xFFFF6666;
+
+    private static final int KEYBOARD_Y_OFFSET = 18;
 
     private static final String[] QUICK_FILTERS = {
             "All",
@@ -120,7 +122,7 @@ public final class OverlayRenderer {
 
                 context.drawBorder(
                         key.x() - 3,
-                        key.y() - 3,
+                        key.y() + KEYBOARD_Y_OFFSET - 3,
                         key.width() + 6,
                         key.height() + 6,
                         0xFFFFCC55
@@ -128,7 +130,7 @@ public final class OverlayRenderer {
 
                 context.drawBorder(
                         key.x() - 4,
-                        key.y() - 4,
+                        key.y() + KEYBOARD_Y_OFFSET - 4,
                         key.width() + 8,
                         key.height() + 8,
                         0xFFFFFFFF
@@ -138,7 +140,7 @@ public final class OverlayRenderer {
             if (isHoveredForBinding) {
                 context.drawBorder(
                         key.x() - 2,
-                        key.y() - 2,
+                        key.y() + KEYBOARD_Y_OFFSET - 2,
                         key.width() + 4,
                         key.height() + 4,
                         0xFFFFFFFF
@@ -146,7 +148,7 @@ public final class OverlayRenderer {
 
                 context.drawBorder(
                         key.x() - 3,
-                        key.y() - 3,
+                        key.y() + KEYBOARD_Y_OFFSET - 3,
                         key.width() + 6,
                         key.height() + 6,
                         0xFFFFCC55
@@ -223,32 +225,19 @@ public final class OverlayRenderer {
         int clusterX = left ? 0 : 790;
         int labelX = left ? 37 : 827;
 
-        context.drawBorder(clusterX, 56, 108, 126, BORDER_COLOR);
-        context.drawTextWithShadow(textRenderer, Text.literal("Mouse"), labelX, 44, 0xFFCCCCCC);
+        context.drawBorder(clusterX, 56 + KEYBOARD_Y_OFFSET, 108, 126, BORDER_COLOR);
+        context.drawTextWithShadow(textRenderer, Text.literal("Mouse"), labelX, 44 + KEYBOARD_Y_OFFSET, 0xFFCCCCCC);
     }
 
     private static void drawTitle(DrawContext context, TextRenderer textRenderer) {
-        Text title = Text.literal("KeyMap HUD");
-
+        String title = "KeyMap HUD";
+        float scale = 2.0f;
+        float x = (LAYOUT_LEFT + LAYOUT_RIGHT) / 2.0f - (textRenderer.getWidth(title) * scale) / 2.0f;
         context.getMatrices().push();
-        context.getMatrices().translate(LAYOUT_LEFT + 12, -56, 0);
-        context.getMatrices().scale(2.0f, 2.0f, 1.0f);
-        context.drawTextWithShadow(textRenderer, title, 0, 0, TEXT_COLOR);
+        context.getMatrices().translate(x, -70, 0);
+        context.getMatrices().scale(scale, scale, 1.0f);
+        context.drawTextWithShadow(textRenderer, Text.literal(title), 0, 0, TEXT_COLOR);
         context.getMatrices().pop();
-
-        String activeProfileName = KeyMapConfigManager.get().activeProfileName;
-
-        if (activeProfileName != null && !activeProfileName.isBlank()) {
-            int profileX = LAYOUT_LEFT + 12 + (textRenderer.getWidth("KeyMap HUD") * 2) + 12;
-
-            context.drawTextWithShadow(
-                    textRenderer,
-                    Text.literal("Profile: " + activeProfileName),
-                    profileX,
-                    -51,
-                    0xFFAAAAAA
-            );
-        }
     }
 
     private static void drawSearchAndTopFilters(
@@ -262,21 +251,22 @@ public final class OverlayRenderer {
             Integer labelEditKeyCode,
             String labelEditText
     ) {
-        int searchX = LAYOUT_LEFT + 12;
-        int searchY = -24;
+        int searchX = LAYOUT_LEFT;
+        int searchY = -20;
         int searchWidth = 260;
         int searchHeight = 16;
 
         context.fill(searchX, searchY, searchX + searchWidth, searchY + searchHeight, 0xFF202020);
         context.drawBorder(searchX, searchY, searchWidth, searchHeight, BORDER_COLOR);
 
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(displaySearchQuery(searchQuery, bindingMode)),
-                searchX + 6,
-                searchY + 4,
-                0xFFAAAAAA
-        );
+        String displayedSearch = displaySearchQuery(searchQuery, bindingMode);
+        context.drawTextWithShadow(textRenderer, Text.literal(displayedSearch), searchX + 6, searchY + 4, 0xFFAAAAAA);
+        if (!bindingMode && !labelEditMode
+                && (searchQuery == null || searchQuery.isEmpty())
+                && (System.currentTimeMillis() / 500) % 2 == 0) {
+            int cursorX = searchX + 6 + textRenderer.getWidth(displayedSearch);
+            context.drawTextWithShadow(textRenderer, Text.literal("_"), cursorX, searchY + 4, 0xFFFFFFFF);
+        }
 
         if (labelEditMode && labelEditKeyCode != null) {
             String keyName = getVisualKeyName(labelEditKeyCode);
@@ -357,7 +347,7 @@ public final class OverlayRenderer {
         }
 
         int buttonX = searchX + searchWidth + 12;
-        int buttonY = -24;
+        int buttonY = -20;
 
         for (String filter : QUICK_FILTERS) {
             int width = textRenderer.getWidth(filter) + 12;
@@ -370,9 +360,24 @@ public final class OverlayRenderer {
         int drawerWidth = textRenderer.getWidth(drawerLabel) + 16;
         drawButton(context, textRenderer, drawerLabel, drawerButtonX, buttonY, drawerWidth);
 
+        String activeProfileName = KeyMapConfigManager.get().activeProfileName;
         int profilesButtonX = drawerButtonX + drawerWidth + 6;
         int profilesWidth = textRenderer.getWidth("Profiles") + 16;
+
         drawButton(context, textRenderer, "Profiles", profilesButtonX, buttonY, profilesWidth);
+
+        if (activeProfileName != null && !activeProfileName.isBlank()) {
+            String profileText = "Profile: " + activeProfileName;
+            int profileX = profilesButtonX + profilesWidth + 10;
+
+            context.drawTextWithShadow(
+                    textRenderer,
+                    Text.literal(profileText),
+                    profileX,
+                    buttonY + 3,
+                    0xFFAAAAAA
+            );
+        }
     }
 
     private static void drawButton(DrawContext context, TextRenderer textRenderer, String label, int x, int y, int width) {
@@ -733,7 +738,7 @@ public final class OverlayRenderer {
         }
 
         int x = key.x();
-        int y = key.y();
+        int y = key.y() + KEYBOARD_Y_OFFSET;
 
         context.fill(x, y, x + key.width(), y + key.height(), color);
         context.drawBorder(x, y, key.width(), key.height(), matchesSearch ? BORDER_COLOR : 0x66FFFFFF);
@@ -927,10 +932,11 @@ public final class OverlayRenderer {
     }
 
     private static boolean isMouseOverKey(KeyVisual key, int mouseX, int mouseY) {
+        int y = key.y() + KEYBOARD_Y_OFFSET;
         return mouseX >= key.x()
                 && mouseX <= key.x() + key.width()
-                && mouseY >= key.y()
-                && mouseY <= key.y() + key.height();
+                && mouseY >= y
+                && mouseY <= y + key.height();
     }
 
     private static void drawTooltip(
@@ -1106,24 +1112,26 @@ public final class OverlayRenderer {
 
         int freeKeys = totalKeys - boundKeys;
 
-        int y = -40;
-        int x = LAYOUT_LEFT + 290;
-
-        x = drawStatPart(context, textRenderer, "Keys: " + totalKeys, x, y, 0xFFCCCCCC);
-        x = drawStatPart(context, textRenderer, "Free: " + freeKeys, x + 14, y, 0xFF55FF99);
-        x = drawStatPart(context, textRenderer, "Bound: " + boundKeys, x + 14, y, 0xFFFFCC55);
-        drawStatPart(context, textRenderer, "Conflicts: " + conflictKeys, x + 14, y, 0xFFFF6666);
+        int y = -43;
+        String a = "Keys: " + totalKeys, b = "Free: " + freeKeys, c = "Bound: " + boundKeys, d = "Conflicts: " + conflictKeys;
+        int gap = 14;
+        int totalWidth = textRenderer.getWidth(a) + textRenderer.getWidth(b) + textRenderer.getWidth(c) + textRenderer.getWidth(d) + gap * 3;
+        int x = (LAYOUT_LEFT + LAYOUT_RIGHT - totalWidth) / 2;
+        x = drawStatPart(context, textRenderer, a, x, y, 0xFFCCCCCC);
+        x = drawStatPart(context, textRenderer, b, x + gap, y, 0xFF55FF99);
+        x = drawStatPart(context, textRenderer, c, x + gap, y, 0xFFFFCC55);
+        drawStatPart(context, textRenderer, d, x + gap, y, 0xFFFF6666);
     }
 
     public static String getQuickFilterQueryAt(int mouseX, int mouseY) {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
-        int searchX = LAYOUT_LEFT + 12;
+        int searchX = LAYOUT_LEFT;
         int searchWidth = 260;
 
         int buttonX = searchX + searchWidth + 12;
-        int buttonY = -24;
+        int buttonY = -20;
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer textRenderer = client.textRenderer;
@@ -1148,11 +1156,11 @@ public final class OverlayRenderer {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
-        int searchX = LAYOUT_LEFT + 12;
+        int searchX = LAYOUT_LEFT;
         int searchWidth = 260;
 
         int buttonX = searchX + searchWidth + 12;
-        int buttonY = -24;
+        int buttonY = -20;
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer textRenderer = client.textRenderer;
@@ -1176,11 +1184,11 @@ public final class OverlayRenderer {
         LayoutInfo layout = getLayoutInfo();
         LocalMouse local = toLocalMouse(mouseX, mouseY, layout);
 
-        int searchX = LAYOUT_LEFT + 12;
+        int searchX = LAYOUT_LEFT;
         int searchWidth = 260;
 
         int buttonX = searchX + searchWidth + 12;
-        int buttonY = -24;
+        int buttonY = -20;
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer textRenderer = client.textRenderer;
