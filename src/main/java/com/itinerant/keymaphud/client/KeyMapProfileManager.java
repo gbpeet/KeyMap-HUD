@@ -254,6 +254,40 @@ public final class KeyMapProfileManager {
         );
     }
 
+    public static ResetResult resetToDefaults() {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client.options == null) {
+            return new ResetResult(false, "Minecraft options are not available.");
+        }
+
+        int resetBindings = 0;
+
+        for (KeyBinding binding : client.options.allKeys) {
+            binding.setBoundKey(binding.getDefaultKey());
+            resetBindings++;
+        }
+
+        KeyBinding.updateKeysByCode();
+        client.options.write();
+
+        KeyMapConfig config = KeyMapConfigManager.get();
+        config.keyboardLayout = "ANSI_US";
+        config.hudScale = 1.0f;
+        config.hudPosition = "CENTER";
+        config.mousePosition = "RIGHT";
+        config.lastSearch = "";
+        config.activeProfileName = "";
+        config.labels.clear();
+
+        KeyMapConfigManager.save();
+
+        return new ResetResult(
+                true,
+                "Reset " + resetBindings + " keybindings and cleared KeyMap HUD profile settings."
+        );
+    }
+
     private static Map<String, KeyBinding> buildCurrentBindingMap(KeyBinding[] bindings) {
         Map<String, KeyBinding> result = new HashMap<>();
 
@@ -366,6 +400,9 @@ public final class KeyMapProfileManager {
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+    }
+
+    public record ResetResult(boolean success, String message) {
     }
 
     public record ExportResult(boolean success, Path path, String message) {

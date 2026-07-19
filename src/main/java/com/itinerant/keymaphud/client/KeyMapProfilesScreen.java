@@ -64,7 +64,20 @@ public final class KeyMapProfilesScreen extends Screen {
                                         KeyMapProfileManager.getProfilesDirectory().toFile()
                                 )
                         )
-                        .dimensions(centerX - 155, 82, 310, 20)
+                        .dimensions(centerX - 155, 82, 150, 20)
+                        .build()
+        );
+
+        addDrawableChild(
+                ButtonWidget.builder(
+                                Text.literal("Reset to Default"),
+                                button -> {
+                                    if (client != null) {
+                                        client.setScreen(new KeyMapDefaultResetConfirmScreen(this));
+                                    }
+                                }
+                        )
+                        .dimensions(centerX + 5, 82, 150, 20)
                         .build()
         );
 

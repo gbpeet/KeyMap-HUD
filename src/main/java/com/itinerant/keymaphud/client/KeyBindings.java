@@ -18,7 +18,7 @@ public final class KeyBindings {
                         "key.keymaphud.show_overlay",
                         InputUtil.Type.KEYSYM,
                         GLFW.GLFW_KEY_RIGHT_ALT,
-                        "KeyKap HUD"
+                        "KeyMap HUD"
                 )
         );
     }
