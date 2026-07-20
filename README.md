@@ -112,7 +112,7 @@ If you enjoy my mods and would like to support future development, you can find 
 
 ## Author
 
-<img src="docs/images/itinerant-mods-logo.png" alt="Itinerant Mods logo" width="96">
+<img src="docs/images/itinerant-mods-logo.png" alt="Itinerant-Mods-logo" width="96">
 
 Created by **Itinerant Mods**.
 
