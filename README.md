@@ -63,6 +63,14 @@ Select an action and visually choose the key you want to assign to it. Available
 
 ![Visually assigning a keybinding with KeyMap HUD](docs/screenshots/keymap-hud-rebinding.png)
 
+### Custom Key Labels
+
+Give individual keys custom labels that appear directly on the KeyMap HUD keyboard.
+
+Custom labels make it easy to identify important controls at a glance without needing to remember what every key is assigned to. Labels can be added, edited, or removed directly from the key tooltip and are saved as part of your KeyMap HUD configuration.
+
+This is especially useful for large modpacks where a key's function may not be obvious from the key itself.
+
 ![Custom key labels in KeyMap HUD](docs/screenshots/keymap-hud-labels.png)
 
 ### Designed for Modded Minecraft
