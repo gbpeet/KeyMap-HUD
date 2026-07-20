@@ -4,6 +4,8 @@
 
 KeyMap HUD provides an interactive keyboard and mouse overlay that makes it easy to see, understand, and manage your Minecraft keybindings. Quickly find conflicting keybinds, discover unused keys, search through actions, and organize different control setups with profiles.
 
+![KeyMap HUD visual keyboard and mouse overlay](docs/screenshots/keymap-hud-main.png)
+
 > **Status:** KeyMap HUD is currently in development and has not yet been publicly released.
 
 ## Features
@@ -37,9 +39,15 @@ Search your controls and filter keybindings by:
 
 KeyMap HUD also supports search prefixes such as `mod:` and `cat:` for more targeted searches.
 
+![KeyMap HUD search and filtering](docs/screenshots/keymap-hud-search.png)
+
+![KeyMap HUD mod filter drawer](docs/screenshots/keymap-hud-filters.png)
+
 ### Keybinding Profiles
 
 Create and manage multiple keybinding profiles for different playstyles or mod setups.
+
+![KeyMap HUD profile management](docs/screenshots/keymap-hud-profiles.png)
 
 Profiles can be:
 
@@ -52,6 +60,10 @@ Profiles can be:
 ### Key Rebinding
 
 Select an action and visually choose the key you want to assign to it. Available keys are highlighted to make finding a good binding easier while still allowing you to intentionally create conflicting bindings when desired.
+
+![Visually assigning a keybinding with KeyMap HUD](docs/screenshots/keymap-hud-rebinding.png)
+
+![Custom key labels in KeyMap HUD](docs/screenshots/keymap-hud-labels.png)
 
 ### Designed for Modded Minecraft
 
