@@ -1,6 +1,6 @@
 # KeyMap HUD
 
-<img src="docs/images/keymap-hud-icon.png" alt="KeyMap HUD icon" width="128">
+<img src="docs/screenshots/keymap-hud-icon.png" alt="KeyMap HUD icon" width="128">
 
 **A visual keybinding manager for Minecraft Fabric.**
 
@@ -112,7 +112,7 @@ If you enjoy my mods and would like to support future development, you can find 
 
 ## Author
 
-<img src="docs/images/itinerant-mods-logo.png" alt="Itinerant-Mods-logo" width="96">
+<img src="docs/screenshots/itinerant-mods-logo.png" alt="Itinerant Mods logo" width="96">
 
 Created by **Itinerant Mods**.
 
