@@ -1,5 +1,7 @@
 # KeyMap HUD
 
+<img src="docs/images/keymap-hud-icon.png" alt="KeyMap HUD icon" width="128">
+
 **A visual keybinding manager for Minecraft Fabric.**
 
 KeyMap HUD provides an interactive keyboard and mouse overlay that makes it easy to see, understand, and manage your Minecraft keybindings. Quickly find conflicting keybinds, discover unused keys, search through actions, and organize different control setups with profiles.
@@ -108,4 +110,10 @@ If you enjoy my mods and would like to support future development, you can find 
 
 ## Author
 
+## Author
+
+<img src="docs/images/itinerant-mods-logo.png" alt="Itinerant Mods logo" width="96">
+
 Created by **Itinerant Mods**.
+
+[Ko-fi](https://ko-fi.com/itinerantmods) • [YouTube](https://youtube.com/@itinerantmods)
