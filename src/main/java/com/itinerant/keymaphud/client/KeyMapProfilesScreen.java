@@ -97,7 +97,16 @@ public final class KeyMapProfilesScreen extends Screen {
                                     Text.literal("Import: " + display),
                                     button -> openPreview(profile)
                             )
-                            .dimensions(centerX - 155, y, 310, 20)
+                            .dimensions(centerX - 155, y, 240, 20)
+                            .build()
+            );
+
+            addDrawableChild(
+                    ButtonWidget.builder(
+                                    Text.literal("Delete"),
+                                    button -> deleteProfile(profile)
+                            )
+                            .dimensions(centerX + 90, y, 65, 20)
                             .build()
             );
 
@@ -199,9 +208,20 @@ public final class KeyMapProfilesScreen extends Screen {
         KeyMapProfileManager.ExportResult result =
                 KeyMapProfileManager.exportProfile(profileNameField.getText());
 
-        status = result.message();
+        String resultMessage = result.message();
         refreshProfiles();
         init();
+        status = resultMessage;
+    }
+
+    private void deleteProfile(Path profile) {
+        KeyMapProfileManager.DeleteResult result =
+                KeyMapProfileManager.deleteProfile(profile);
+
+        String resultMessage = result.message();
+        refreshProfiles();
+        init();
+        status = resultMessage;
     }
 
     private void openPreview(Path profile) {

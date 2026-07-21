@@ -1316,8 +1316,8 @@ public final class OverlayRenderer {
 
         for (String category : getCategories(bindingsByKey)) {
             boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
-            boolean onRow = local.y() >= itemY - 2 && local.y() <= itemY + 10;
-            boolean onArrow = local.x() >= itemX && local.x() <= itemX + 10;
+            boolean onRow = local.y() >= itemY - 4 && local.y() <= itemY + 12;
+            boolean onArrow = local.x() >= itemX - 10 && local.x() <= itemX + 18;
 
             if (visible && onRow && onArrow) return category;
 
@@ -1770,12 +1770,12 @@ public final class OverlayRenderer {
                             && local.y() <= drawerY + drawerHeight;
 
             boolean onThisRow =
-                    local.y() >= itemY - 2
-                            && local.y() <= itemY + 10;
+                    local.y() >= itemY - 4
+                            && local.y() <= itemY + 12;
 
             boolean onArrow =
-                    local.x() >= itemX
-                            && local.x() <= itemX + 10;
+                    local.x() >= itemX - 10
+                            && local.x() <= itemX + 18;
 
             if (insideVisibleDrawer && onThisRow && onArrow) {
                 return modName;

@@ -100,6 +100,8 @@ public final class KeyMapProfileManager {
 
         try (Writer writer = Files.newBufferedWriter(target)) {
             GSON.toJson(data, writer);
+            config.activeProfileName = profileName;
+            KeyMapConfigManager.save();
             return new ExportResult(true, target, "Exported " + target.getFileName());
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -119,6 +121,18 @@ public final class KeyMapProfileManager {
         } catch (IOException exception) {
             exception.printStackTrace();
             return List.of();
+        }
+    }
+
+    public static DeleteResult deleteProfile(Path path) {
+        try {
+            boolean deleted = Files.deleteIfExists(path);
+            return deleted
+                    ? new DeleteResult(true, "Deleted " + path.getFileName())
+                    : new DeleteResult(false, "Profile file was not found.");
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            return new DeleteResult(false, "Could not delete " + path.getFileName());
         }
     }
 
@@ -400,6 +414,9 @@ public final class KeyMapProfileManager {
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+    }
+
+    public record DeleteResult(boolean success, String message) {
     }
 
     public record ResetResult(boolean success, String message) {
