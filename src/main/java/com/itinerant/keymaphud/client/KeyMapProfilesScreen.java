@@ -104,7 +104,11 @@ public final class KeyMapProfilesScreen extends Screen {
             addDrawableChild(
                     ButtonWidget.builder(
                                     Text.literal("Delete"),
-                                    button -> deleteProfile(profile)
+                                    button -> {
+                                        if (client != null) {
+                                            client.setScreen(new KeyMapProfileDeleteConfirmScreen(this, profile));
+                                        }
+                                    }
                             )
                             .dimensions(centerX + 90, y, 65, 20)
                             .build()
@@ -214,7 +218,7 @@ public final class KeyMapProfilesScreen extends Screen {
         status = resultMessage;
     }
 
-    private void deleteProfile(Path profile) {
+    public void deleteProfile(Path profile) {
         KeyMapProfileManager.DeleteResult result =
                 KeyMapProfileManager.deleteProfile(profile);
 
