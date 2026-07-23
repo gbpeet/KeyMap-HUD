@@ -4,9 +4,7 @@
 
 ## Showcase Video
 
-See KeyMap HUD in action, including searching and filtering keybindings, visual key rebinding, custom labels, profiles, and marking intentional conflicts as safe.
-
-[▶ Watch the KeyMap HUD Showcase on YouTube](https://youtu.be/mCMwruAfBEY)
+[▶ See a showcase of the features of KeyMap HUD on YouTube](https://youtu.be/mCMwruAfBEY)
 
 **A visual keybinding manager for Minecraft Fabric.**
 
