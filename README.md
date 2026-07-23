@@ -45,6 +45,28 @@ KeyMap HUD also supports search prefixes such as `mod:` and `cat:` for more targ
 
 ![KeyMap HUD mod filter drawer](docs/screenshots/keymap-hud-filters.png)
 
+### Key Rebinding
+
+Select an action and visually choose the key you want to assign to it. Available keys are highlighted to make finding a good binding easier while still allowing you to intentionally create conflicting bindings when desired.
+
+![Visually assigning a keybinding with KeyMap HUD](docs/screenshots/keymap-hud-rebinding.png)
+
+### Safe Conflicts
+
+Not every keybinding conflict is actually a problem. KeyMap HUD lets you mark intentional conflicts as **safe**, changing the key from red to amber so it no longer appears as an active conflict.
+
+Safe conflicts are automatically cleared if one of the bindings is reassigned or if another binding is added to the key, ensuring new conflicts are still brought to your attention. You can also manually clear the safe status at any time.
+
+### Custom Key Labels
+
+Give individual keys custom labels that appear directly on the KeyMap HUD keyboard.
+
+Custom labels make it easy to identify important controls at a glance without needing to remember what every key is assigned to. Labels can be added, edited, or removed directly from the key tooltip and are saved as part of your KeyMap HUD configuration.
+
+This is especially useful for large modpacks where a key's function may not be obvious from the key itself.
+
+![Custom key labels in KeyMap HUD](docs/screenshots/keymap-hud-labels.png)
+
 ### Keybinding Profiles
 
 Create and manage multiple keybinding profiles for different playstyles or mod setups.
@@ -58,22 +80,6 @@ Profiles can be:
 * Duplicated
 * Deleted
 * Switched without manually rebuilding your entire control layout
-
-### Key Rebinding
-
-Select an action and visually choose the key you want to assign to it. Available keys are highlighted to make finding a good binding easier while still allowing you to intentionally create conflicting bindings when desired.
-
-![Visually assigning a keybinding with KeyMap HUD](docs/screenshots/keymap-hud-rebinding.png)
-
-### Custom Key Labels
-
-Give individual keys custom labels that appear directly on the KeyMap HUD keyboard.
-
-Custom labels make it easy to identify important controls at a glance without needing to remember what every key is assigned to. Labels can be added, edited, or removed directly from the key tooltip and are saved as part of your KeyMap HUD configuration.
-
-This is especially useful for large modpacks where a key's function may not be obvious from the key itself.
-
-![Custom key labels in KeyMap HUD](docs/screenshots/keymap-hud-labels.png)
 
 ### Designed for Modded Minecraft
 
