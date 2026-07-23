@@ -202,6 +202,12 @@ public class KeyMapScreen extends Screen {
 
         Integer clickedVisualKey = OverlayRenderer.getVisualKeyCodeAt((int) mouseX, (int) mouseY);
 
+        if (clickedVisualKey != null && button == 0 && !filterDrawerOpen) {
+            if (OverlayRenderer.toggleSafeConflict(clickedVisualKey)) {
+                return true;
+            }
+        }
+
         if (clickedVisualKey != null && button == 1) { // Right-click: edit label
             beginLabelEdit(clickedVisualKey);
             return true;

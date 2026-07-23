@@ -681,7 +681,11 @@ public final class OverlayRenderer {
         }
 
         if (conflictCount > 1) {
-            return ACTION_CONFLICT_COLOR;
+            List<KeyBinding> conflicts = new ArrayList<>();
+            for (KeyBinding otherBinding : getAllKeyBindings()) {
+                if (getKeyCodeForBinding(otherBinding) == keyCode) conflicts.add(otherBinding);
+            }
+            if (!isSafeConflict(keyCode, conflicts)) return ACTION_CONFLICT_COLOR;
         }
 
         return ACTION_BOUND_COLOR;
@@ -729,7 +733,8 @@ public final class OverlayRenderer {
 
         boolean matchesSearch = matchesSearch(key, bindings, searchQuery);
 
-        int color = count == 0 ? UNUSED_COLOR : count == 1 ? USED_COLOR : CONFLICT_COLOR;
+        boolean safeConflict = count > 1 && isSafeConflict(key.keyCode(), bindings);
+        int color = count == 0 ? UNUSED_COLOR : count == 1 || safeConflict ? USED_COLOR : CONFLICT_COLOR;
         int textColor = TEXT_COLOR;
 
         if (!matchesSearch) {
@@ -826,7 +831,7 @@ public final class OverlayRenderer {
         if (query.equals("middle mouse")) return key.label().equals("MMB");
         if (query.equals("unused")) return bindings.isEmpty();
         if (query.equals("bound")) return !bindings.isEmpty();
-        if (query.equals("conflict") || query.equals("conflicts")) return bindings.size() > 1;
+        if (query.equals("conflict") || query.equals("conflicts")) return bindings.size() > 1 && !isSafeConflict(key.keyCode(), bindings);
         if (query.equals("keyboard")) return key.keyCode() >= 0;
 
         if (key.label().toLowerCase().contains(query)) {
@@ -967,6 +972,17 @@ public final class OverlayRenderer {
             lines.remove(lines.size() - 1);
         }
 
+        if (bindings.size() > 1) {
+            lines.add(Text.literal(""));
+            if (isSafeConflict(key.keyCode(), bindings)) {
+                lines.add(Text.literal("Safe conflict"));
+                lines.add(Text.literal("Left-click to mark as conflict again"));
+            } else {
+                lines.add(Text.literal("Conflict"));
+                lines.add(Text.literal("Left-click to mark this conflict as safe"));
+            }
+        }
+
         lines.add(Text.literal(""));
 
         if (customLabel != null && !customLabel.isBlank()) {
@@ -1105,7 +1121,7 @@ public final class OverlayRenderer {
                 boundKeys++;
             }
 
-            if (bindings.size() > 1) {
+            if (bindings.size() > 1 && !isSafeConflict(key.keyCode(), bindings)) {
                 conflictKeys++;
             }
         }
@@ -1121,6 +1137,36 @@ public final class OverlayRenderer {
         x = drawStatPart(context, textRenderer, b, x + gap, y, 0xFF55FF99);
         x = drawStatPart(context, textRenderer, c, x + gap, y, 0xFFFFCC55);
         drawStatPart(context, textRenderer, d, x + gap, y, 0xFFFF6666);
+    }
+
+    public static boolean toggleSafeConflict(int keyCode) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.options == null) return false;
+
+        List<KeyBinding> bindings = groupKeybinds(client.options.allKeys).getOrDefault(keyCode, List.of());
+        if (bindings.size() < 2) return false;
+
+        String signature = buildConflictSignature(keyCode, bindings);
+        KeyMapConfig config = KeyMapConfigManager.get();
+        if (config.safeConflicts == null) config.safeConflicts = new java.util.LinkedHashSet<>();
+
+        if (!config.safeConflicts.remove(signature)) config.safeConflicts.add(signature);
+        KeyMapConfigManager.save();
+        return true;
+    }
+
+    private static boolean isSafeConflict(int keyCode, List<KeyBinding> bindings) {
+        KeyMapConfig config = KeyMapConfigManager.get();
+        return bindings.size() > 1 && config.safeConflicts != null
+                && config.safeConflicts.contains(buildConflictSignature(keyCode, bindings));
+    }
+
+    private static String buildConflictSignature(int keyCode, List<KeyBinding> bindings) {
+        List<String> identities = bindings.stream()
+                .map(binding -> binding.getCategory() + "\u0000" + binding.getTranslationKey())
+                .sorted()
+                .toList();
+        return keyCode + "|" + String.join("|", identities);
     }
 
     public static String getQuickFilterQueryAt(int mouseX, int mouseY) {
@@ -1317,7 +1363,7 @@ public final class OverlayRenderer {
         for (String category : getCategories(bindingsByKey)) {
             boolean visible = local.y() >= drawerY + 40 && local.y() <= drawerY + drawerHeight;
             boolean onRow = local.y() >= itemY - 4 && local.y() <= itemY + 12;
-            boolean onArrow = local.x() >= itemX - 10 && local.x() <= itemX + 18;
+            boolean onArrow = local.x() >= itemX - 10 && local.x() <= itemX + 10;
 
             if (visible && onRow && onArrow) return category;
 
@@ -1775,7 +1821,7 @@ public final class OverlayRenderer {
 
             boolean onArrow =
                     local.x() >= itemX - 10
-                            && local.x() <= itemX + 18;
+                            && local.x() <= itemX + 10;
 
             if (insideVisibleDrawer && onThisRow && onArrow) {
                 return modName;

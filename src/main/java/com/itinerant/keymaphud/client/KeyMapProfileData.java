@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public final class KeyMapProfileData {
     public int profileFormat = 1;
@@ -15,6 +17,7 @@ public final class KeyMapProfileData {
     public List<ModEntry> installedMods = new ArrayList<>();
     public List<BindingEntry> keybindings = new ArrayList<>();
     public Map<String, String> keyLabels = new LinkedHashMap<>();
+    public Set<String> safeConflicts = new LinkedHashSet<>();
     public DisplaySettings displaySettings = new DisplaySettings();
 
     public static final class ModEntry {

@@ -89,6 +89,7 @@ public final class KeyMapProfileManager {
 
         KeyMapConfig config = KeyMapConfigManager.get();
         data.keyLabels = new LinkedHashMap<>(config.labels);
+        data.safeConflicts = new HashSet<>(config.safeConflicts);
         data.displaySettings.keyboardLayout = config.keyboardLayout;
         data.displaySettings.hudScale = config.hudScale;
         data.displaySettings.hudPosition = config.hudPosition;
@@ -248,6 +249,8 @@ public final class KeyMapProfileManager {
             });
         }
 
+        config.safeConflicts = data.safeConflicts == null ? new HashSet<>() : new HashSet<>(data.safeConflicts);
+
         if (data.displaySettings != null) {
             config.keyboardLayout = nonBlank(data.displaySettings.keyboardLayout, "ANSI_US");
             config.hudScale = sanitizeHudScale(data.displaySettings.hudScale);
@@ -293,6 +296,7 @@ public final class KeyMapProfileManager {
         config.lastSearch = "";
         config.activeProfileName = "";
         config.labels.clear();
+        config.safeConflicts.clear();
 
         KeyMapConfigManager.save();
 
@@ -361,6 +365,10 @@ public final class KeyMapProfileManager {
 
         if (data.displaySettings == null) {
             data.displaySettings = new KeyMapProfileData.DisplaySettings();
+        }
+
+        if (data.safeConflicts == null) {
+            data.safeConflicts = new HashSet<>();
         }
 
         if (data.profileName == null || data.profileName.isBlank()) {

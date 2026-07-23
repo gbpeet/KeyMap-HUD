@@ -2,6 +2,8 @@ package com.itinerant.keymaphud.client;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public final class KeyMapConfig {
     public String _comment = "KeyMap HUD configuration. Custom key labels may contain up to 6 characters.";
@@ -15,6 +17,7 @@ public final class KeyMapConfig {
     public String activeProfileName = "";
 
     public Map<String, String> labels = new LinkedHashMap<>();
+    public Set<String> safeConflicts = new LinkedHashSet<>();
 
     public String getLabel(int keyCode) {
         return labels.getOrDefault(Integer.toString(keyCode), "");
