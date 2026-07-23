@@ -2,6 +2,12 @@
 
 <img src="docs/screenshots/keymap-hud-icon.png" alt="KeyMap HUD icon" width="128">
 
+## Showcase Video
+
+See KeyMap HUD in action, including searching and filtering keybindings, visual key rebinding, custom labels, profiles, and marking intentional conflicts as safe.
+
+[▶ Watch the KeyMap HUD Showcase on YouTube](https://youtu.be/mCMwruAfBEY)
+
 **A visual keybinding manager for Minecraft Fabric.**
 
 KeyMap HUD provides an interactive keyboard and mouse overlay that makes it easy to see, understand, and manage your Minecraft keybindings. Quickly find conflicting keybinds, discover unused keys, search through actions, and organize different control setups with profiles.
