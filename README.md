@@ -2,8 +2,6 @@
 
 <img src="docs/screenshots/keymap-hud-icon.png" alt="KeyMap HUD icon" width="128">
 
-## Showcase Video
-
 [▶ See a showcase of the features of KeyMap HUD on YouTube](https://youtu.be/mCMwruAfBEY)
 
 **A visual keybinding manager for Minecraft Fabric.**
